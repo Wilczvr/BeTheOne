@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.06.1";
+  const APP_VERSION = "2026.08.06.2";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -189,7 +189,6 @@
   const MOBILE_COLLAPSE_STORAGE_KEY = "betheone.mobile_collapsed_blocks.v1";
   const MOBILE_COLLAPSIBLE_SELECTOR = [
     ".planner-block",
-    ".template-builder-card",
     ".league-card",
     ".league-block",
     ".monthly-habit-panel",
@@ -200,7 +199,6 @@
     ".filter-toolbar",
     ".login-install-card",
     ".login-account-sync-card",
-    ".template-execution-block",
   ].join(",");
   const UI_SCALE_OPTIONS = [
     { value: "compact", label: "Kompaktowy" },
@@ -981,6 +979,7 @@
   function applyMobileLayoutEnhancements() {
     enhanceMobileCollapsibleBlocks();
     updateResponsiveTableLabels();
+    updateCloudSyncUi();
   }
 
   function readMobileCollapseMap() {
@@ -1053,6 +1052,11 @@
 
       const heading = findMobileCollapsibleHeading(block);
       if (!heading) {
+        return;
+      }
+      const hasOwnHeadingAction = Array.from(heading.querySelectorAll("button"))
+        .some((button) => !button.classList.contains("hint-icon") && !button.classList.contains("mobile-collapse-toggle"));
+      if (hasOwnHeadingAction) {
         return;
       }
 
@@ -1892,11 +1896,20 @@
     if (elements.cloudSyncButton) {
       elements.cloudSyncButton.textContent = state.cloudSync.loading ? "Synchronizuję..." : "Synchronizuj";
     }
+    const mobileViewport = isMobileViewport();
     if (elements.cloudSyncUploadButton) {
-      elements.cloudSyncUploadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "upload" ? "Wysyłam..." : "Zsynchronizuj z tego urządzenia";
+      elements.cloudSyncUploadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "upload"
+        ? "Wysyłam..."
+        : mobileViewport
+          ? "Wyślij"
+          : "Zsynchronizuj z tego urządzenia";
     }
     if (elements.cloudSyncDownloadButton) {
-      elements.cloudSyncDownloadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "download" ? "Pobieram..." : "Zsynchronizuj dane na to urządzenie";
+      elements.cloudSyncDownloadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "download"
+        ? "Pobieram..."
+        : mobileViewport
+          ? "Pobierz"
+          : "Zsynchronizuj dane na to urządzenie";
     }
     if (elements.accountCloudSyncButton) {
       elements.accountCloudSyncButton.textContent = state.cloudSync.loading ? "Synchronizuję..." : "Zsynchronizuj z tego urządzenia";
@@ -1907,6 +1920,10 @@
     if (elements.accountCloudDownloadButton) {
       elements.accountCloudDownloadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "download" ? "Pobieram..." : "Zsynchronizuj dane na to urządzenie";
     }
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
   }
 
   function getCloudSyncDeviceId() {
@@ -3337,9 +3354,15 @@
         return;
       }
 
+      const trigger = createHelpTrigger(text, "Objaśnienie sekcji");
+      if (attachHelpTriggerToNearestHeading(hint, trigger)) {
+        hint.remove();
+        return;
+      }
+
       const wrapper = document.createElement("div");
       wrapper.className = "panel-support-icon";
-      wrapper.appendChild(createHelpTrigger(text, "Objaśnienie sekcji"));
+      wrapper.appendChild(trigger);
       hint.replaceWith(wrapper);
     });
 
@@ -3354,11 +3377,51 @@
         return;
       }
 
+      const trigger = createHelpTrigger(text, "Dodatkowa informacja");
+      if (attachHelpTriggerToNearestHeading(hint, trigger)) {
+        hint.remove();
+        return;
+      }
+
       const row = document.createElement("div");
       row.className = "hint-floating-row";
-      row.appendChild(createHelpTrigger(text, "Dodatkowa informacja"));
+      row.appendChild(trigger);
       hint.replaceWith(row);
     });
+  }
+
+  function attachHelpTriggerToNearestHeading(sourceNode, trigger) {
+    const directHeading = sourceNode.closest(".panel-heading, .subpanel-heading, .chart-header, .compact-heading, .form-section-heading");
+    const directTitle = directHeading
+      ? directHeading.querySelector("h2, h3, strong, legend")
+      : null;
+    if (directTitle) {
+      directTitle.appendChild(trigger);
+      return true;
+    }
+
+    const block = sourceNode.closest(".planner-block, .template-builder-card, .league-card, .league-block, .monthly-habit-panel, .coach-report-block, .avatar-preview-card, .avatar-store-panel, .sync-card, .filter-toolbar, .login-account-sync-card, .login-install-card");
+    const blockTitle = block
+      ? block.querySelector(".subpanel-heading h2, .subpanel-heading h3, .panel-heading h2, .panel-heading h3, h2, h3, strong")
+      : null;
+    if (blockTitle) {
+      blockTitle.appendChild(trigger);
+      return true;
+    }
+
+    let sibling = sourceNode.previousElementSibling;
+    while (sibling) {
+      const siblingTitle = sibling.matches("h2, h3, strong, legend")
+        ? sibling
+        : sibling.querySelector && sibling.querySelector("h2, h3, strong, legend");
+      if (siblingTitle) {
+        siblingTitle.appendChild(trigger);
+        return true;
+      }
+      sibling = sibling.previousElementSibling;
+    }
+
+    return false;
   }
 
   function createHelpTrigger(text, ariaLabel) {
