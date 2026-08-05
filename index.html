@@ -13,11 +13,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260805-sync-gui-v1">
+  <link rel="stylesheet" href="styles.css?v=20260805-account-sync-v1">
   <script src="vendor/supabase.min.js?v=20260624b" defer></script>
   <script src="league-config.js?v=20260624b" defer></script>
   <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js?v=20260805-sync-gui-v1" defer></script>
+  <script src="app.js?v=20260805-account-sync-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
@@ -164,13 +164,20 @@
       <div id="accountSyncCard" class="login-account-sync-card">
         <div>
           <p class="eyebrow">Konto i urządzenia</p>
-          <h3>Połącz telefon i komputer przez email</h3>
-          <p id="accountSyncHint" class="security-note">Zweryfikowany email może działać jak konto BeTheOne. Link nie zawiera hasła ani danych, tylko pomaga otworzyć ten sam email na drugim urządzeniu.</p>
+          <h3 id="accountSyncTitle">Mam już istniejące konto</h3>
+          <p id="accountSyncHint" class="security-note">Na nowym urządzeniu wpisz email konta, wyślij kod, pobierz zaszyfrowane dane z Supabase i zaloguj się lokalnym hasłem.</p>
         </div>
-        <div class="account-sync-actions">
-          <button id="copyAccountLinkButton" class="button button-subtle" type="button">Skopiuj link konta</button>
-          <button id="sendAccountSyncEmailButton" class="button button-subtle" type="button">Wyślij kod do konta</button>
-          <button id="importAccountSyncButton" class="button button-primary" type="button">Pobierz konto z Supabase</button>
+        <div class="account-sync-controls">
+          <label id="accountEmailField" class="field account-email-field">
+            <span>Email istniejącego konta</span>
+            <input id="accountEmailInput" type="email" maxlength="160" autocomplete="email" placeholder="np. twój@email.pl">
+            <p class="field-hint">Użyj emaila, który był wcześniej zweryfikowany na głównym urządzeniu.</p>
+          </label>
+          <div class="account-sync-actions">
+            <button id="copyAccountLinkButton" class="button button-subtle" type="button">Skopiuj link konta</button>
+            <button id="sendAccountSyncEmailButton" class="button button-subtle" type="button">Wyślij kod do istniejącego konta</button>
+            <button id="importAccountSyncButton" class="button button-primary" type="button">Pobierz konto i przejdź do logowania</button>
+          </div>
         </div>
       </div>
 

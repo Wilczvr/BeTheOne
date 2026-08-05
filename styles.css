@@ -1198,6 +1198,16 @@ select option:hover,
   font-size: clamp(1.15rem, 1.7vw, 1.42rem);
 }
 
+.account-sync-controls {
+  display: grid;
+  gap: 0.8rem;
+  min-width: min(100%, 34rem);
+}
+
+.account-email-field {
+  min-width: min(100%, 18rem);
+}
+
 .account-sync-actions {
   display: flex;
   flex-wrap: wrap;

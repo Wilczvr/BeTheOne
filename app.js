@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.05.8";
+  const APP_VERSION = "2026.08.05.9";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -184,6 +184,7 @@
   const CLOUD_SYNC_DEVICE_KEY = "betheone.cloud_sync.device.v1";
   const CLOUD_SYNC_TABLE = "app_vault_sync";
   const ACCOUNT_LINK_HASH_KEY = "account";
+  const APP_PUBLIC_URL = "https://wilczvr.github.io/BeTheOne/";
   const UI_SCALE_STORAGE_KEY = "betheone.ui_scale.v1";
   const UI_SCALE_OPTIONS = [
     { value: "compact", label: "Kompaktowy" },
@@ -681,7 +682,10 @@
     installAppHint: document.getElementById("installAppHint"),
     uiScaleSelect: document.getElementById("uiScaleSelect"),
     accountSyncCard: document.getElementById("accountSyncCard"),
+    accountSyncTitle: document.getElementById("accountSyncTitle"),
     accountSyncHint: document.getElementById("accountSyncHint"),
+    accountEmailField: document.getElementById("accountEmailField"),
+    accountEmailInput: document.getElementById("accountEmailInput"),
     copyAccountLinkButton: document.getElementById("copyAccountLinkButton"),
     sendAccountSyncEmailButton: document.getElementById("sendAccountSyncEmailButton"),
     importAccountSyncButton: document.getElementById("importAccountSyncButton"),
@@ -945,7 +949,10 @@
   }
 
   function buildAccountLink(email) {
-    const url = new URL(window.location.href);
+    const shouldUsePublicUrl = window.location.protocol === "file:"
+      || LOCAL_ONLY_HOSTS.has(window.location.hostname)
+      || !/^https:$/i.test(window.location.protocol);
+    const url = new URL(shouldUsePublicUrl ? APP_PUBLIC_URL : window.location.href);
     url.searchParams.delete("error");
     url.searchParams.delete("error_code");
     url.searchParams.delete("error_description");
@@ -966,6 +973,10 @@
     }
   }
 
+  function readAccountEmailInput() {
+    return normalizeEmailAddress(elements.accountEmailInput ? elements.accountEmailInput.value : "");
+  }
+
   function processAccountLinkFromLocation() {
     const email = readAccountLinkEmailFromLocation();
     if (!email) {
@@ -974,6 +985,9 @@
 
     if (elements.recoveryEmailInput) {
       elements.recoveryEmailInput.value = email;
+    }
+    if (elements.accountEmailInput) {
+      elements.accountEmailInput.value = email;
     }
     state.activeTab = "login";
     applyActiveTab();
@@ -1000,7 +1014,7 @@
 
   async function handleSendAccountSyncEmail() {
     try {
-      const email = readRecoveryEmailInput() || readAccountLinkEmailFromLocation();
+      const email = readAccountEmailInput() || readAccountLinkEmailFromLocation() || readRecoveryEmailInput();
       if (!email) {
         throw new Error("Wpisz email konta, które chcesz połączyć z tym urządzeniem.");
       }
@@ -1012,7 +1026,9 @@
       storePendingEmailRecovery(email, "account_sync");
       runSafeUiStep("updateVaultControls.accountSyncStart", updateVaultControls);
       await sendSupabaseEmailOtp(email, { shouldCreateUser: false });
-      showStatus("Wysłano kod do konta. Wpisz kod z maila i kliknij „Pobierz konto z Supabase”.");
+      state.activeTab = "login";
+      runSafeUiStep("applyActiveTab.accountSyncEmail", applyActiveTab);
+      showStatus("Wysłano kod do istniejącego konta. Wpisz kod z maila i kliknij „Pobierz konto i przejdź do logowania”.");
     } catch (error) {
       clearPendingEmailRecovery();
       showStatus(formatEmailRecoveryError(error, "Nie udało się wysłać kodu do konta."), true);
@@ -1024,7 +1040,7 @@
 
   async function handleImportAccountFromSupabase() {
     try {
-      const email = readRecoveryEmailInput() || state.emailRecovery.pendingEmail || readAccountLinkEmailFromLocation();
+      const email = readAccountEmailInput() || state.emailRecovery.pendingEmail || readAccountLinkEmailFromLocation() || readRecoveryEmailInput();
       const token = elements.recoveryEmailOtpInput ? normalizeEmailOtpCode(elements.recoveryEmailOtpInput.value) : "";
       if (!email) {
         throw new Error("Wpisz email konta, z którego chcesz pobrać dane.");
@@ -1049,7 +1065,7 @@
 
       importCloudVaultRecord(remoteRecord);
       clearPendingEmailRecovery();
-      showStatus("Pobrano zaszyfrowane konto z Supabase. Zaloguj się lokalnym hasłem z głównego urządzenia, aby je odblokować.");
+      showStatus("Pobrano aktualne zaszyfrowane dane z Supabase. Zaloguj się lokalnym hasłem z głównego urządzenia, aby je odblokować.");
     } catch (error) {
       state.cloudSync.error = formatCloudSyncError(error);
       showStatus(formatEmailRecoveryError(error, state.cloudSync.error || "Nie udało się pobrać konta z Supabase."), true);
@@ -22936,7 +22952,7 @@ function sortTemplates(templates) {
       elements.copyAccountLinkButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || !navigator.onLine;
     }
     if (elements.sendAccountSyncEmailButton) {
-      elements.sendAccountSyncEmailButton.disabled = emailRecoveryBusy || !navigator.onLine || (hasVault && !state.unlocked);
+      elements.sendAccountSyncEmailButton.disabled = state.unlocked || hasVault || emailRecoveryBusy || !navigator.onLine;
     }
     if (elements.importAccountSyncButton) {
       elements.importAccountSyncButton.disabled = state.unlocked || hasVault || emailRecoveryBusy || !navigator.onLine || !accountSyncPending;
@@ -22962,10 +22978,13 @@ function sortTemplates(templates) {
       elements.copyAccountLinkButton.classList.toggle("is-hidden", !state.unlocked);
     }
     if (elements.sendAccountSyncEmailButton) {
-      elements.sendAccountSyncEmailButton.classList.toggle("is-hidden", hasVault && !state.unlocked);
+      elements.sendAccountSyncEmailButton.classList.toggle("is-hidden", state.unlocked || hasVault);
     }
     if (elements.importAccountSyncButton) {
       elements.importAccountSyncButton.classList.toggle("is-hidden", state.unlocked || hasVault);
+    }
+    if (elements.accountEmailField) {
+      elements.accountEmailField.classList.toggle("is-hidden", state.unlocked || hasVault);
     }
     elements.exportVaultButton.classList.toggle("is-hidden", !state.unlocked);
     elements.importVaultButton.classList.toggle("is-hidden", !state.unlocked);
@@ -22980,6 +22999,12 @@ function sortTemplates(templates) {
       elements.recoveryQuestionInput.value = "";
       if (!accountSyncPending && !readAccountLinkEmailFromLocation()) {
         elements.recoveryEmailInput.value = "";
+      }
+      if (elements.accountEmailInput && !accountSyncPending && !readAccountLinkEmailFromLocation()) {
+        elements.accountEmailInput.value = "";
+      }
+      if (elements.accountEmailInput && accountSyncPending && state.emailRecovery.pendingEmail) {
+        elements.accountEmailInput.value = state.emailRecovery.pendingEmail;
       }
       elements.recoveryPromptText.textContent = "";
       elements.recoveryStatusNote.textContent = "Przy zakładaniu nowego konta możesz od razu dodać pytanie pomocnicze do lokalnego odzyskiwania dostępu.";
@@ -23019,15 +23044,22 @@ function sortTemplates(templates) {
     }
 
     if (elements.accountSyncHint) {
+      if (elements.accountSyncTitle) {
+        elements.accountSyncTitle.textContent = state.unlocked
+          ? "Połącz kolejne urządzenie"
+          : hasVault
+            ? "Konto i odzyskiwanie"
+            : "Mam już istniejące konto";
+      }
       elements.accountSyncHint.textContent = state.unlocked
         ? verifiedEmailRecoveryConfigured
-          ? `Konto email ${recoveryEmail} jest gotowe do synchronizacji. Skopiuj link na drugie urządzenie i wykonaj sync przez Supabase.`
+          ? `Konto email ${recoveryEmail} jest gotowe do synchronizacji. Kliknij „Synchronizuj” w Panelu Głównym, a potem skopiuj link na drugie urządzenie.`
           : "Zweryfikuj email odzyskiwania, aby utworzyć wspólne konto synchronizacji dla telefonu i komputera."
         : hasVault
           ? "Po wylogowaniu możesz odzyskiwać dostęp, ale parowanie nowego urządzenia wykonaj po zalogowaniu albo na urządzeniu bez lokalnego vaulta."
           : accountSyncPending
-            ? "Wpisz kod z maila i kliknij „Pobierz konto z Supabase”. Po pobraniu zalogujesz się lokalnym hasłem z głównego urządzenia."
-            : "Otwórz link konta z głównego urządzenia albo wpisz email, wyślij kod i pobierz zaszyfrowaną kopię z Supabase.";
+            ? "Wpisz kod z maila i kliknij „Pobierz konto i przejdź do logowania”. Po pobraniu zalogujesz się lokalnym hasłem z głównego urządzenia."
+            : "Masz już konto? Wpisz email, wyślij kod i pobierz aktualną zaszyfrowaną kopię z Supabase bez tworzenia nowego lokalnego konta.";
     }
   }
 
