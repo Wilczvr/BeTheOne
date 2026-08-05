@@ -29,6 +29,8 @@
 
 html {
   font-size: calc(16px * var(--ui-font-scale));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html[data-ui-scale="compact"] {
@@ -56,6 +58,8 @@ html {
 
 body {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   font-family: var(--font-body);
   font-kerning: normal;
@@ -68,6 +72,7 @@ body {
     radial-gradient(circle at top right, rgba(114, 10, 35, 0.18), transparent 28%),
     linear-gradient(180deg, #020204, #08080d 38%, #030306 100%);
   overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 img,
@@ -96,6 +101,7 @@ input,
 textarea,
 select {
   font: inherit;
+  touch-action: manipulation;
 }
 
 .aurora {
@@ -4514,9 +4520,18 @@ canvas {
   color: var(--ruby-hot);
 }
 
+.cloud-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  width: 100%;
+}
+
 .cloud-sync-control .button {
+  flex: 1 1 12rem;
   min-height: 2.45rem;
-  padding: 0.72rem 1rem;
+  padding: 0.72rem 0.9rem;
+  white-space: normal;
 }
 
 @media (max-width: 760px) {
@@ -4524,6 +4539,10 @@ canvas {
   .cloud-sync-control {
     align-items: stretch;
     width: 100%;
+  }
+
+  .cloud-sync-actions {
+    flex-direction: column;
   }
 
   .cloud-sync-control .button {
@@ -4621,4 +4640,353 @@ canvas {
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     inset 0 0 80px rgba(255, 45, 103, 0.08);
   backdrop-filter: blur(10px);
+}
+
+/* Mobile-first usability layer: collapsible blocks and card-like tables. */
+.mobile-collapsible-content {
+  display: contents;
+}
+
+.mobile-collapse-toggle {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  html[data-ui-scale="compact"] {
+    --ui-font-scale: 0.82;
+    --ui-density: 0.72;
+  }
+
+  html[data-ui-scale="medium"] {
+    --ui-font-scale: 0.88;
+    --ui-density: 0.82;
+  }
+
+  html[data-ui-scale="large"] {
+    --ui-font-scale: 0.94;
+    --ui-density: 0.9;
+  }
+
+  input,
+  select,
+  textarea,
+  .table-input,
+  .table-control,
+  .table-control-select,
+  .table-control-note {
+    font-size: 16px;
+  }
+
+  .hero,
+  .layout,
+  .command-deck {
+    padding-left: max(0.55rem, env(safe-area-inset-left));
+    padding-right: max(0.55rem, env(safe-area-inset-right));
+  }
+
+  .hero {
+    gap: 0.55rem;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: 0.55rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.05rem, 15vw, 2.45rem);
+  }
+
+  .hero .eyebrow {
+    margin-bottom: 0.32rem;
+    font-size: 0.62rem;
+  }
+
+  .hero-avatar {
+    grid-template-columns: minmax(0, 1fr) 5.8rem;
+    max-width: none;
+    padding: 0.58rem 0.65rem;
+    gap: 0.5rem;
+  }
+
+  .hero-avatar-stage {
+    width: 5.8rem;
+    min-height: 5.65rem;
+    flex-basis: 5.8rem;
+  }
+
+  .avatar-art-hero {
+    width: 5.75rem;
+  }
+
+  .hero-avatar-copy strong {
+    font-size: 0.98rem;
+  }
+
+  .hero-badge {
+    padding: 0.72rem 0.8rem;
+  }
+
+  .panel {
+    padding: 0.72rem;
+    border-radius: 0.85rem;
+  }
+
+  .panel-heading {
+    padding-bottom: 0.65rem;
+  }
+
+  .panel h2 {
+    font-size: 1.35rem;
+  }
+
+  .panel-support,
+  .section-intro,
+  .security-note,
+  .field-hint,
+  .filter-summary,
+  .table-subtext {
+    font-size: 0.82rem;
+    line-height: 1.42;
+  }
+
+  .planner-block,
+  .template-builder-card,
+  .league-card,
+  .league-block,
+  .monthly-habit-panel,
+  .coach-report-block,
+  .avatar-preview-card,
+  .avatar-store-panel,
+  .sync-card,
+  .filter-toolbar,
+  .login-install-card,
+  .login-account-sync-card,
+  .template-execution-block {
+    margin-top: 0.72rem;
+    padding: 0.72rem;
+    border-radius: 0.85rem;
+  }
+
+  .mobile-collapsible-heading {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.62rem;
+  }
+
+  .mobile-collapsible-heading > :first-child {
+    min-width: 0;
+  }
+
+  .mobile-collapsible-content {
+    display: block;
+  }
+
+  .mobile-collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 2.35rem;
+    padding: 0.54rem 0.72rem;
+    border: 1px solid rgba(255, 82, 133, 0.26);
+    border-radius: 999px;
+    background:
+      linear-gradient(145deg, rgba(25, 26, 36, 0.96), rgba(8, 9, 14, 0.98));
+    color: #fff7fa;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .mobile-collapse-toggle:focus-visible {
+    outline: 2px solid rgba(255, 82, 133, 0.75);
+    outline-offset: 2px;
+  }
+
+  .is-mobile-collapsed .mobile-collapsible-content {
+    display: none;
+  }
+
+  .is-mobile-collapsed {
+    padding-bottom: 0.58rem;
+  }
+
+  .is-mobile-collapsed .mobile-collapsible-heading {
+    margin-bottom: 0;
+  }
+
+  .field,
+  .table-control,
+  .table-control-select,
+  .table-control-note {
+    gap: 0.35rem;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 2.65rem;
+    padding: 0.72rem 0.8rem;
+  }
+
+  textarea {
+    min-height: 5.2rem;
+  }
+
+  .button,
+  button,
+  .command-tab {
+    min-height: 2.45rem;
+  }
+
+  .command-deck {
+    padding-top: 0.3rem;
+  }
+
+  .command-deck-inner {
+    gap: 0.35rem;
+    padding: 0.42rem;
+  }
+
+  .command-tab {
+    padding: 0.58rem 0.72rem;
+    font-size: 0.64rem;
+  }
+
+  .metric-grid,
+  .progress-grid,
+  .dashboard-compact-grid,
+  .league-summary-grid,
+  .weekly-report-layout,
+  .preparation-grid,
+  .risk-alert-grid,
+  .weekly-report-grid,
+  .post-workout-grid {
+    gap: 0.58rem;
+  }
+
+  .metric-card,
+  .progress-card,
+  .habit-check-item,
+  .month-tracker-day,
+  .exercise-picker-option {
+    padding: 0.68rem;
+    border-radius: 0.8rem;
+  }
+
+  .metric-value,
+  .dashboard-compact-grid .metric-value {
+    font-size: 1.18rem;
+  }
+
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .entries-table,
+  .league-table,
+  .program-table,
+  .template-execution-table,
+  .meal-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    background: transparent;
+  }
+
+  .entries-table thead {
+    display: none;
+  }
+
+  .entries-table tbody {
+    display: grid;
+    gap: 0.62rem;
+  }
+
+  .entries-table tr {
+    display: grid;
+    gap: 0;
+    padding: 0.68rem;
+    border: 1px solid rgba(255, 45, 103, 0.14);
+    border-radius: 0.88rem;
+    background:
+      linear-gradient(145deg, rgba(14, 15, 22, 0.95), rgba(5, 6, 10, 0.96)),
+      radial-gradient(circle at 100% 0%, rgba(255, 45, 103, 0.1), transparent 38%);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.26);
+  }
+
+  .entries-table th,
+  .entries-table td {
+    display: grid;
+    grid-template-columns: minmax(5.8rem, 0.42fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.55rem;
+    padding: 0.42rem 0;
+    border-bottom: 1px solid rgba(255, 82, 133, 0.08);
+    font-size: 0.82rem;
+  }
+
+  .entries-table td::before,
+  .entries-table th::before {
+    content: attr(data-label);
+    color: #b995a5;
+    font-size: 0.66rem;
+    font-weight: 950;
+    letter-spacing: 0.07em;
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+
+  .entries-table td[data-label=""]::before,
+  .entries-table th[data-label=""]::before {
+    display: none;
+  }
+
+  .entries-table td:last-child,
+  .entries-table th:last-child {
+    border-bottom: 0;
+  }
+
+  .entries-table td[colspan],
+  .entries-table th[colspan] {
+    display: block;
+    padding: 0.65rem 0;
+    color: #cdb7c1;
+  }
+
+  .entries-table td[colspan]::before,
+  .entries-table th[colspan]::before {
+    display: none;
+  }
+
+  .table-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .table-actions button,
+  .edit-button,
+  .delete-button {
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.58rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .entries-table th,
+  .entries-table td {
+    grid-template-columns: minmax(4.8rem, 0.38fr) minmax(0, 1fr);
+  }
+
+  .table-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

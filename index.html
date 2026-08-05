@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://hpwkmhsbvqzsxqjkbccr.supabase.co wss://hpwkmhsbvqzsxqjkbccr.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#090008">
@@ -13,11 +13,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260805-email-sync-v1">
+  <link rel="stylesheet" href="styles.css?v=20260806-mobile-v1">
   <script src="vendor/supabase.min.js?v=20260624b" defer></script>
   <script src="league-config.js?v=20260624b" defer></script>
   <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js?v=20260805-email-sync-v1" defer></script>
+  <script src="app.js?v=20260806-mobile-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
@@ -176,7 +176,8 @@
           <div class="account-sync-actions">
             <button id="sendAccountSyncEmailButton" class="button button-subtle" type="button">Wyślij kod</button>
             <button id="importAccountSyncButton" class="button button-primary" type="button">Synchronizuj konto</button>
-            <button id="accountCloudSyncButton" class="button button-primary is-hidden" type="button">Synchronizuj konto teraz</button>
+            <button id="accountCloudUploadButton" class="button button-primary is-hidden" type="button">Zsynchronizuj z tego urządzenia</button>
+            <button id="accountCloudDownloadButton" class="button button-subtle is-hidden" type="button">Zsynchronizuj dane na to urządzenie</button>
           </div>
         </div>
       </div>
@@ -355,7 +356,10 @@
             <h2>Panel Główny</h2>
             <div class="cloud-sync-control" aria-live="polite">
               <span id="cloudSyncStatus" class="cloud-sync-status">Nie synchronizowano</span>
-              <button id="cloudSyncButton" class="button button-primary" type="button">Synchronizuj</button>
+              <div class="cloud-sync-actions">
+                <button id="cloudSyncUploadButton" class="button button-primary" type="button">Zsynchronizuj z tego urządzenia</button>
+                <button id="cloudSyncDownloadButton" class="button button-subtle" type="button">Zsynchronizuj dane na to urządzenie</button>
+              </div>
             </div>
           </div>
         </div>

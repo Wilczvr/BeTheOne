@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.05.10";
+  const APP_VERSION = "2026.08.06.1";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -186,6 +186,22 @@
   const ACCOUNT_LINK_HASH_KEY = "account";
   const APP_PUBLIC_URL = "https://wilczvr.github.io/BeTheOne/";
   const UI_SCALE_STORAGE_KEY = "betheone.ui_scale.v1";
+  const MOBILE_COLLAPSE_STORAGE_KEY = "betheone.mobile_collapsed_blocks.v1";
+  const MOBILE_COLLAPSIBLE_SELECTOR = [
+    ".planner-block",
+    ".template-builder-card",
+    ".league-card",
+    ".league-block",
+    ".monthly-habit-panel",
+    ".coach-report-block",
+    ".avatar-preview-card",
+    ".avatar-store-panel",
+    ".sync-card",
+    ".filter-toolbar",
+    ".login-install-card",
+    ".login-account-sync-card",
+    ".template-execution-block",
+  ].join(",");
   const UI_SCALE_OPTIONS = [
     { value: "compact", label: "Kompaktowy" },
     { value: "medium", label: "Średni" },
@@ -235,6 +251,8 @@
     localSession: createEmptyLocalSessionState(),
     installPrompt: createEmptyInstallPromptState(),
     uiScale: getInitialUiScale(),
+    mobileLayoutObserver: null,
+    mobileLayoutUpdateTimer: 0,
     entryPhotoDrafts: [],
     bannerTimeout: null,
     autoLockTimeout: null,
@@ -363,6 +381,8 @@
     dashboardStatus: document.getElementById("dashboardStatus"),
     cloudSyncStatus: document.getElementById("cloudSyncStatus"),
     cloudSyncButton: document.getElementById("cloudSyncButton"),
+    cloudSyncUploadButton: document.getElementById("cloudSyncUploadButton"),
+    cloudSyncDownloadButton: document.getElementById("cloudSyncDownloadButton"),
     toggleHabitEditorButton: document.getElementById("toggleHabitEditorButton"),
     dashboardHabitList: document.getElementById("dashboardHabitList"),
     dashboardMonthTrackerTitle: document.getElementById("dashboardMonthTrackerTitle"),
@@ -690,6 +710,8 @@
     sendAccountSyncEmailButton: document.getElementById("sendAccountSyncEmailButton"),
     importAccountSyncButton: document.getElementById("importAccountSyncButton"),
     accountCloudSyncButton: document.getElementById("accountCloudSyncButton"),
+    accountCloudUploadButton: document.getElementById("accountCloudUploadButton"),
+    accountCloudDownloadButton: document.getElementById("accountCloudDownloadButton"),
     statusBanner: document.getElementById("statusBanner"),
     lockablePanels: Array.from(document.querySelectorAll(".app-lockable")),
   };
@@ -727,6 +749,7 @@
     updateSyncUi();
     hydrateCloudSyncState();
     updateCloudSyncUi();
+    initializeMobileLayoutEnhancements();
     initializeLeagueClient();
 
     const storedVault = readStoredVault();
@@ -936,6 +959,161 @@
     applyUiScale(elements.uiScaleSelect.value);
   }
 
+  function initializeMobileLayoutEnhancements() {
+    applyMobileLayoutEnhancements();
+
+    if (!state.mobileLayoutObserver && typeof MutationObserver === "function") {
+      state.mobileLayoutObserver = new MutationObserver(() => scheduleMobileLayoutEnhancement());
+      state.mobileLayoutObserver.observe(document.querySelector(".layout") || document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    window.addEventListener("resize", scheduleMobileLayoutEnhancement, { passive: true });
+  }
+
+  function scheduleMobileLayoutEnhancement() {
+    window.clearTimeout(state.mobileLayoutUpdateTimer);
+    state.mobileLayoutUpdateTimer = window.setTimeout(applyMobileLayoutEnhancements, 120);
+  }
+
+  function applyMobileLayoutEnhancements() {
+    enhanceMobileCollapsibleBlocks();
+    updateResponsiveTableLabels();
+  }
+
+  function readMobileCollapseMap() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(MOBILE_COLLAPSE_STORAGE_KEY) || "{}");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  function writeMobileCollapsePreference(key, collapsed) {
+    try {
+      const preferences = readMobileCollapseMap();
+      preferences[key] = Boolean(collapsed);
+      localStorage.setItem(MOBILE_COLLAPSE_STORAGE_KEY, JSON.stringify(preferences));
+    } catch (_error) {
+      // Layout preferences are helpful, but never critical for user data.
+    }
+  }
+
+  function getMobileCollapseKey(block, heading, fallbackIndex) {
+    const panel = block.closest("[data-tab-panel]");
+    const panelId = panel ? panel.getAttribute("data-tab-panel") || panel.id || "panel" : "global";
+    const headingText = sanitizePlainText((heading.textContent || "").replace(/Zwiń|Rozwiń/g, ""), 80)
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9ąćęłńóśźż-]/gi, "");
+    return `${panelId}:${block.id || headingText || "blok"}:${fallbackIndex}`;
+  }
+
+  function findMobileCollapsibleHeading(block) {
+    const children = Array.from(block.children);
+    const heading = children.find((child) => child.matches(".subpanel-heading, .panel-heading, .chart-header, .compact-heading"));
+    if (heading) {
+      return heading;
+    }
+
+    const standaloneHeading = children.find((child) => /^H[2-4]$/i.test(child.tagName));
+    if (!standaloneHeading) {
+      return null;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "subpanel-heading mobile-generated-heading";
+    block.insertBefore(wrapper, standaloneHeading);
+    wrapper.appendChild(standaloneHeading);
+    return wrapper;
+  }
+
+  function shouldCollapseMobileBlockByDefault(block) {
+    const panel = block.closest("[data-tab-panel]");
+    if (!panel) {
+      return false;
+    }
+    const topLevelBlocks = Array.from(panel.querySelectorAll(MOBILE_COLLAPSIBLE_SELECTOR))
+      .filter((candidate) => candidate.closest("[data-tab-panel]") === panel);
+    const index = topLevelBlocks.indexOf(block);
+    return index > 1;
+  }
+
+  function enhanceMobileCollapsibleBlocks() {
+    const preferences = readMobileCollapseMap();
+    const blocks = Array.from(document.querySelectorAll(MOBILE_COLLAPSIBLE_SELECTOR));
+
+    blocks.forEach((block, index) => {
+      if (block.dataset.mobileCollapsibleReady === "true") {
+        return;
+      }
+
+      const heading = findMobileCollapsibleHeading(block);
+      if (!heading) {
+        return;
+      }
+
+      const content = document.createElement("div");
+      content.className = "mobile-collapsible-content";
+      content.id = block.id ? `${block.id}MobileContent` : `mobileCollapsibleContent${index}`;
+
+      while (heading.nextSibling) {
+        content.appendChild(heading.nextSibling);
+      }
+      block.appendChild(content);
+
+      const key = getMobileCollapseKey(block, heading, index);
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "mobile-collapse-toggle";
+      toggle.setAttribute("aria-controls", content.id);
+
+      const setCollapsed = (collapsed, persist = true) => {
+        block.classList.toggle("is-mobile-collapsed", collapsed);
+        toggle.setAttribute("aria-expanded", String(!collapsed));
+        toggle.textContent = collapsed ? "Rozwiń" : "Zwiń";
+        if (persist) {
+          writeMobileCollapsePreference(key, collapsed);
+        }
+      };
+
+      toggle.addEventListener("click", () => {
+        setCollapsed(!block.classList.contains("is-mobile-collapsed"));
+      });
+
+      heading.classList.add("mobile-collapsible-heading");
+      heading.appendChild(toggle);
+      block.dataset.mobileCollapsibleReady = "true";
+      block.dataset.mobileCollapseKey = key;
+
+      const hasStoredPreference = Object.prototype.hasOwnProperty.call(preferences, key);
+      setCollapsed(hasStoredPreference ? preferences[key] : shouldCollapseMobileBlockByDefault(block), false);
+    });
+  }
+
+  function updateResponsiveTableLabels() {
+    document.querySelectorAll("table").forEach((table) => {
+      const labels = Array.from(table.querySelectorAll("thead th")).map((cell) =>
+        sanitizePlainText(cell.textContent || "", 80)
+      );
+      if (!labels.length) {
+        return;
+      }
+
+      table.querySelectorAll("tbody tr").forEach((row) => {
+        Array.from(row.children).forEach((cell, index) => {
+          if (!cell.matches("td, th") || cell.hasAttribute("colspan")) {
+            return;
+          }
+          cell.dataset.label = labels[index] || "";
+        });
+      });
+    });
+  }
+
   function getActiveVerifiedEmailRecoveryConfig() {
     const storedVault = readStoredVault();
     const storedConfig = readEmailRecoveryConfig(storedVault);
@@ -1137,7 +1315,13 @@
       elements.importAccountSyncButton.addEventListener("click", handleImportAccountFromSupabase);
     }
     if (elements.accountCloudSyncButton) {
-      elements.accountCloudSyncButton.addEventListener("click", handleCloudSyncClick);
+      elements.accountCloudSyncButton.addEventListener("click", handleCloudSyncUploadClick);
+    }
+    if (elements.accountCloudUploadButton) {
+      elements.accountCloudUploadButton.addEventListener("click", handleCloudSyncUploadClick);
+    }
+    if (elements.accountCloudDownloadButton) {
+      elements.accountCloudDownloadButton.addEventListener("click", handleCloudSyncDownloadClick);
     }
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -1160,7 +1344,15 @@
       }
     });
     elements.importVaultInput.addEventListener("change", handleImportVault);
-    elements.cloudSyncButton.addEventListener("click", handleCloudSyncClick);
+    if (elements.cloudSyncButton) {
+      elements.cloudSyncButton.addEventListener("click", handleCloudSyncUploadClick);
+    }
+    if (elements.cloudSyncUploadButton) {
+      elements.cloudSyncUploadButton.addEventListener("click", handleCloudSyncUploadClick);
+    }
+    if (elements.cloudSyncDownloadButton) {
+      elements.cloudSyncDownloadButton.addEventListener("click", handleCloudSyncDownloadClick);
+    }
     elements.startSyncSourceButton.addEventListener("click", handleStartSyncSource);
     elements.resetSyncSourceButton.addEventListener("click", () => resetSyncFlow("source"));
     elements.copySourceSyncButton.addEventListener("click", () => copyTextValue(elements.sourceSyncTokenOutput.value, "Skopiowano link lub kod synchronizacji."));
@@ -1460,6 +1652,7 @@
       accountUserId: "",
       dirty: false,
       loading: false,
+      direction: "",
       status: "idle",
       error: "",
       lastSyncAt: "",
@@ -1625,17 +1818,33 @@
   }
 
   function updateCloudSyncUi() {
-    if (!elements.cloudSyncStatus || !elements.cloudSyncButton) {
+    const dashboardSyncButtons = [
+      elements.cloudSyncButton,
+      elements.cloudSyncUploadButton,
+      elements.cloudSyncDownloadButton,
+    ].filter(Boolean);
+    const accountSyncButtons = [
+      elements.accountCloudSyncButton,
+      elements.accountCloudUploadButton,
+      elements.accountCloudDownloadButton,
+    ].filter(Boolean);
+    const syncButtons = [...dashboardSyncButtons, ...accountSyncButtons];
+    if (!elements.cloudSyncStatus && syncButtons.length === 0) {
       return;
     }
 
     const storedVault = readStoredVault();
     const hasVault = Boolean(storedVault);
+    const verifiedEmailRecoveryConfigured = Boolean(getActiveVerifiedEmailRecoveryConfig());
     let label = "Nie synchronizowano";
     let uiState = "idle";
 
     if (state.cloudSync.loading) {
-      label = "Synchronizacja...";
+      label = state.cloudSync.direction === "download"
+        ? "Pobieranie z Supabase..."
+        : state.cloudSync.direction === "upload"
+          ? "Wysyłanie do Supabase..."
+          : "Synchronizacja...";
       uiState = "syncing";
     } else if (!navigator.onLine) {
       label = "Offline - brak internetu";
@@ -1645,6 +1854,9 @@
       uiState = "empty";
     } else if (!state.unlocked) {
       label = "Zaloguj się, aby synchronizować";
+      uiState = "locked";
+    } else if (!verifiedEmailRecoveryConfigured) {
+      label = "Potwierdź email do synchronizacji";
       uiState = "locked";
     } else if (state.cloudSync.error) {
       label = "Sync wymaga uwagi";
@@ -1665,10 +1877,36 @@
       uiState = "idle";
     }
 
-    elements.cloudSyncStatus.textContent = label;
-    elements.cloudSyncStatus.dataset.state = uiState;
-    elements.cloudSyncButton.disabled = !state.unlocked || !hasVault || !navigator.onLine || state.cloudSync.loading;
-    elements.cloudSyncButton.textContent = state.cloudSync.loading ? "Synchronizuję..." : "Synchronizuj";
+    if (elements.cloudSyncStatus) {
+      elements.cloudSyncStatus.textContent = label;
+      elements.cloudSyncStatus.dataset.state = uiState;
+    }
+    const disabled = !state.unlocked || !hasVault || !verifiedEmailRecoveryConfigured || !navigator.onLine || state.cloudSync.loading;
+    const accountDisabled = disabled;
+    dashboardSyncButtons.forEach((button) => {
+      button.disabled = disabled;
+    });
+    accountSyncButtons.forEach((button) => {
+      button.disabled = accountDisabled;
+    });
+    if (elements.cloudSyncButton) {
+      elements.cloudSyncButton.textContent = state.cloudSync.loading ? "Synchronizuję..." : "Synchronizuj";
+    }
+    if (elements.cloudSyncUploadButton) {
+      elements.cloudSyncUploadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "upload" ? "Wysyłam..." : "Zsynchronizuj z tego urządzenia";
+    }
+    if (elements.cloudSyncDownloadButton) {
+      elements.cloudSyncDownloadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "download" ? "Pobieram..." : "Zsynchronizuj dane na to urządzenie";
+    }
+    if (elements.accountCloudSyncButton) {
+      elements.accountCloudSyncButton.textContent = state.cloudSync.loading ? "Synchronizuję..." : "Zsynchronizuj z tego urządzenia";
+    }
+    if (elements.accountCloudUploadButton) {
+      elements.accountCloudUploadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "upload" ? "Wysyłam..." : "Zsynchronizuj z tego urządzenia";
+    }
+    if (elements.accountCloudDownloadButton) {
+      elements.accountCloudDownloadButton.textContent = state.cloudSync.loading && state.cloudSync.direction === "download" ? "Pobieram..." : "Zsynchronizuj dane na to urządzenie";
+    }
   }
 
   function getCloudSyncDeviceId() {
@@ -1711,18 +1949,11 @@
       return session;
     }
 
-    if (!state.league.client && !initializeLeagueClient()) {
-      throw new Error(state.league.error || "Brak konfiguracji Supabase dla synchronizacji.");
-    }
-    const session = await ensureLeagueSession();
-    state.cloudSync.client = state.league.client;
-    state.cloudSync.accountEmail = "";
-    state.cloudSync.accountUserId = session.user.id;
-    return session;
+    throw new Error("Najpierw zapisz i potwierdź email odzyskiwania w ustawieniach logowania. Synchronizacja danych aplikacji jest przypisana do tego zweryfikowanego konta email.");
   }
 
   function getCloudSyncClient() {
-    return state.cloudSync.client || state.league.client || state.emailRecovery.client;
+    return state.cloudSync.client || state.emailRecovery.client || null;
   }
 
   async function fetchCloudVaultRecord(userId) {
@@ -1858,7 +2089,7 @@
     return raw || fallback;
   }
 
-  async function handleCloudSyncClick() {
+  async function handleCloudSyncUploadClick() {
     if (!requireUnlocked()) {
       return;
     }
@@ -1877,6 +2108,7 @@
     try {
       validateVaultShape(localVault);
       state.cloudSync.loading = true;
+      state.cloudSync.direction = "upload";
       state.cloudSync.error = "";
       updateCloudSyncUi();
 
@@ -1886,7 +2118,7 @@
 
       if (!remoteRecord) {
         await uploadCloudVaultRecord(session, localVault, localChecksum);
-        showStatus("Utworzono pierwszą zaszyfrowaną kopię w Supabase.");
+        showStatus("Wysłano pierwszą zaszyfrowaną kopię z tego urządzenia do Supabase.");
         return;
       }
 
@@ -1905,32 +2137,105 @@
         });
         state.cloudSync.dirty = false;
         state.cloudSync.status = "synced";
-        showStatus("Dane są już zsynchronizowane z Supabase.");
+        showStatus("Supabase ma już tę samą zaszyfrowaną kopię danych.");
         return;
       }
 
       if (remoteTime > localTime) {
         state.cloudSync.status = "remote";
         updateCloudSyncUi();
-        const shouldImport = window.confirm("W Supabase jest nowsza kopia danych. Pobrać ją na to urządzenie? Obecna lokalna kopia zostanie zastąpiona.");
-        if (!shouldImport) {
-          showStatus("Synchronizacja przerwana. Lokalna kopia nie została zmieniona.", true);
+        const shouldOverwrite = window.confirm("W Supabase jest nowsza kopia danych. Czy na pewno nadpisać ją danymi z tego urządzenia?");
+        if (!shouldOverwrite) {
+          showStatus("Wysyłka przerwana. Kopia w Supabase nie została nadpisana.", true);
           return;
         }
-        importCloudVaultRecord(remoteRecord);
-        return;
       }
 
       await uploadCloudVaultRecord(session, localVault, localChecksum);
-      showStatus("Wysłano najnowszą zaszyfrowaną kopię do Supabase.");
+      showStatus("Wysłano zaszyfrowaną kopię z tego urządzenia do Supabase.");
     } catch (error) {
       state.cloudSync.error = formatCloudSyncError(error);
       state.cloudSync.status = "error";
       showStatus(state.cloudSync.error, true);
     } finally {
       state.cloudSync.loading = false;
+      state.cloudSync.direction = "";
       updateCloudSyncUi();
     }
+  }
+
+  async function handleCloudSyncDownloadClick() {
+    if (!requireUnlocked()) {
+      return;
+    }
+
+    const localVault = readStoredVault();
+    if (!localVault) {
+      showStatus("Brak lokalnego vaulta. Najpierw utwórz konto albo pobierz konto przez mail na ekranie logowania.", true);
+      return;
+    }
+    if (!navigator.onLine) {
+      showStatus("Pobranie danych z Supabase wymaga połączenia z internetem.", true);
+      updateCloudSyncUi();
+      return;
+    }
+
+    try {
+      validateVaultShape(localVault);
+      state.cloudSync.loading = true;
+      state.cloudSync.direction = "download";
+      state.cloudSync.error = "";
+      updateCloudSyncUi();
+
+      const session = await ensureCloudSyncSession();
+      const remoteRecord = await fetchCloudVaultRecord(session.user.id);
+      if (!remoteRecord) {
+        showStatus("W Supabase nie ma jeszcze kopii dla tego konta. Najpierw użyj „Zsynchronizuj z tego urządzenia” na urządzeniu z aktualnymi danymi.", true);
+        return;
+      }
+
+      const remoteVault = remoteRecord.vault;
+      validateVaultShape(remoteVault);
+      const localChecksum = await calculateVaultChecksum(localVault);
+      const remoteChecksum = remoteRecord.checksum || await calculateVaultChecksum(remoteVault);
+
+      if (remoteChecksum === localChecksum) {
+        storeCloudSyncMeta({
+          syncedAt: remoteRecord.synced_at || new Date().toISOString(),
+          vaultUpdatedAt: remoteRecord.vault_updated_at || localVault.updatedAt,
+          checksum: localChecksum,
+          deviceId: remoteRecord.device_id || getCloudSyncDeviceId(),
+        });
+        state.cloudSync.dirty = false;
+        state.cloudSync.status = "synced";
+        showStatus("To urządzenie ma już tę samą zaszyfrowaną kopię danych.");
+        return;
+      }
+
+      const remoteTime = parseVaultTimestamp(remoteRecord.vault_updated_at || remoteVault.updatedAt);
+      const localTime = parseVaultTimestamp(localVault.updatedAt);
+      const confirmMessage = localTime > remoteTime
+        ? "Lokalna kopia wygląda na nowszą niż kopia w Supabase. Czy na pewno pobrać dane na to urządzenie i zastąpić lokalne dane?"
+        : "Pobrać zaszyfrowaną kopię z Supabase na to urządzenie? Obecna lokalna kopia zostanie zastąpiona.";
+      if (!window.confirm(confirmMessage)) {
+        showStatus("Pobranie przerwane. Lokalna kopia nie została zmieniona.", true);
+        return;
+      }
+
+      importCloudVaultRecord(remoteRecord);
+    } catch (error) {
+      state.cloudSync.error = formatCloudSyncError(error);
+      state.cloudSync.status = "error";
+      showStatus(state.cloudSync.error, true);
+    } finally {
+      state.cloudSync.loading = false;
+      state.cloudSync.direction = "";
+      updateCloudSyncUi();
+    }
+  }
+
+  async function handleCloudSyncClick() {
+    await handleCloudSyncUploadClick();
   }
 
   function toBase64Url(base64) {
@@ -22964,6 +23269,12 @@ function sortTemplates(templates) {
     if (elements.accountCloudSyncButton) {
       elements.accountCloudSyncButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || state.cloudSync.loading || !navigator.onLine;
     }
+    if (elements.accountCloudUploadButton) {
+      elements.accountCloudUploadButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || state.cloudSync.loading || !navigator.onLine;
+    }
+    if (elements.accountCloudDownloadButton) {
+      elements.accountCloudDownloadButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || state.cloudSync.loading || !navigator.onLine;
+    }
     elements.exportVaultButton.disabled = !state.unlocked || !hasVault;
     elements.importVaultButton.disabled = !state.unlocked;
 
@@ -22995,6 +23306,12 @@ function sortTemplates(templates) {
     }
     if (elements.accountCloudSyncButton) {
       elements.accountCloudSyncButton.classList.toggle("is-hidden", !state.unlocked);
+    }
+    if (elements.accountCloudUploadButton) {
+      elements.accountCloudUploadButton.classList.toggle("is-hidden", !state.unlocked);
+    }
+    if (elements.accountCloudDownloadButton) {
+      elements.accountCloudDownloadButton.classList.toggle("is-hidden", !state.unlocked);
     }
     elements.exportVaultButton.classList.toggle("is-hidden", !state.unlocked);
     elements.importVaultButton.classList.toggle("is-hidden", !state.unlocked);
@@ -23065,8 +23382,8 @@ function sortTemplates(templates) {
       }
       elements.accountSyncHint.textContent = state.unlocked
         ? verifiedEmailRecoveryConfigured
-          ? `Email ${recoveryEmail} jest zweryfikowany. Kliknij „Synchronizuj konto teraz”, aby wysłać lub pobrać najnowszy zaszyfrowany backup z Supabase.`
-          : "Zapisz i potwierdź email odzyskiwania powyżej, a potem kliknij „Synchronizuj konto teraz”. To połączy telefon i komputer bez kopiowania linków."
+          ? `Email ${recoveryEmail} jest zweryfikowany. Wybierz kierunek: wyślij dane z tego urządzenia do Supabase albo pobierz kopię z Supabase na to urządzenie.`
+          : "Zapisz i potwierdź email odzyskiwania powyżej, a potem wybierz kierunek synchronizacji. To połączy telefon i komputer bez kopiowania linków."
         : hasVault
           ? accountSyncPending
             ? "Wpisz kod z maila i kliknij „Synchronizuj konto”. Lokalna zaszyfrowana kopia zostanie zastąpiona backupem przypisanym do tego emaila, a potem zalogujesz się hasłem tego konta."
@@ -23113,10 +23430,22 @@ function sortTemplates(templates) {
     if (elements.accountCloudSyncButton) {
       elements.accountCloudSyncButton.disabled = !enabled;
     }
+    if (elements.accountCloudUploadButton) {
+      elements.accountCloudUploadButton.disabled = !enabled;
+    }
+    if (elements.accountCloudDownloadButton) {
+      elements.accountCloudDownloadButton.disabled = !enabled;
+    }
     elements.exportVaultButton.disabled = !enabled;
     elements.importVaultButton.disabled = !enabled;
     if (elements.cloudSyncButton) {
       elements.cloudSyncButton.disabled = !enabled;
+    }
+    if (elements.cloudSyncUploadButton) {
+      elements.cloudSyncUploadButton.disabled = !enabled;
+    }
+    if (elements.cloudSyncDownloadButton) {
+      elements.cloudSyncDownloadButton.disabled = !enabled;
     }
   }
 
