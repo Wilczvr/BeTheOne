@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.05.9";
+  const APP_VERSION = "2026.08.05.10";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -689,6 +689,7 @@
     copyAccountLinkButton: document.getElementById("copyAccountLinkButton"),
     sendAccountSyncEmailButton: document.getElementById("sendAccountSyncEmailButton"),
     importAccountSyncButton: document.getElementById("importAccountSyncButton"),
+    accountCloudSyncButton: document.getElementById("accountCloudSyncButton"),
     statusBanner: document.getElementById("statusBanner"),
     lockablePanels: Array.from(document.querySelectorAll(".app-lockable")),
   };
@@ -1028,7 +1029,7 @@
       await sendSupabaseEmailOtp(email, { shouldCreateUser: false });
       state.activeTab = "login";
       runSafeUiStep("applyActiveTab.accountSyncEmail", applyActiveTab);
-      showStatus("Wysłano kod do istniejącego konta. Wpisz kod z maila i kliknij „Pobierz konto i przejdź do logowania”.");
+      showStatus("Wysłano kod do konta. Wpisz kod z maila i kliknij „Synchronizuj konto”.");
     } catch (error) {
       clearPendingEmailRecovery();
       showStatus(formatEmailRecoveryError(error, "Nie udało się wysłać kodu do konta."), true);
@@ -1065,7 +1066,7 @@
 
       importCloudVaultRecord(remoteRecord);
       clearPendingEmailRecovery();
-      showStatus("Pobrano aktualne zaszyfrowane dane z Supabase. Zaloguj się lokalnym hasłem z głównego urządzenia, aby je odblokować.");
+      showStatus("Zsynchronizowano konto z najnowszym backupem z Supabase. Zaloguj się lokalnym hasłem tego konta, aby odblokować dane.");
     } catch (error) {
       state.cloudSync.error = formatCloudSyncError(error);
       showStatus(formatEmailRecoveryError(error, state.cloudSync.error || "Nie udało się pobrać konta z Supabase."), true);
@@ -1134,6 +1135,9 @@
     }
     if (elements.importAccountSyncButton) {
       elements.importAccountSyncButton.addEventListener("click", handleImportAccountFromSupabase);
+    }
+    if (elements.accountCloudSyncButton) {
+      elements.accountCloudSyncButton.addEventListener("click", handleCloudSyncClick);
     }
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -22952,10 +22956,13 @@ function sortTemplates(templates) {
       elements.copyAccountLinkButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || !navigator.onLine;
     }
     if (elements.sendAccountSyncEmailButton) {
-      elements.sendAccountSyncEmailButton.disabled = state.unlocked || hasVault || emailRecoveryBusy || !navigator.onLine;
+      elements.sendAccountSyncEmailButton.disabled = state.unlocked || emailRecoveryBusy || !navigator.onLine;
     }
     if (elements.importAccountSyncButton) {
-      elements.importAccountSyncButton.disabled = state.unlocked || hasVault || emailRecoveryBusy || !navigator.onLine || !accountSyncPending;
+      elements.importAccountSyncButton.disabled = state.unlocked || emailRecoveryBusy || !navigator.onLine || !accountSyncPending;
+    }
+    if (elements.accountCloudSyncButton) {
+      elements.accountCloudSyncButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || state.cloudSync.loading || !navigator.onLine;
     }
     elements.exportVaultButton.disabled = !state.unlocked || !hasVault;
     elements.importVaultButton.disabled = !state.unlocked;
@@ -22975,16 +22982,19 @@ function sortTemplates(templates) {
     elements.sendRecoveryCodeEmailButton.classList.toggle("is-hidden", !showEmailVerificationControls);
     elements.emailReminderButton.classList.toggle("is-hidden", !hasVault || state.unlocked || !verifiedEmailRecoveryConfigured);
     if (elements.copyAccountLinkButton) {
-      elements.copyAccountLinkButton.classList.toggle("is-hidden", !state.unlocked);
+      elements.copyAccountLinkButton.classList.toggle("is-hidden", true);
     }
     if (elements.sendAccountSyncEmailButton) {
-      elements.sendAccountSyncEmailButton.classList.toggle("is-hidden", state.unlocked || hasVault);
+      elements.sendAccountSyncEmailButton.classList.toggle("is-hidden", state.unlocked);
     }
     if (elements.importAccountSyncButton) {
-      elements.importAccountSyncButton.classList.toggle("is-hidden", state.unlocked || hasVault);
+      elements.importAccountSyncButton.classList.toggle("is-hidden", state.unlocked);
     }
     if (elements.accountEmailField) {
-      elements.accountEmailField.classList.toggle("is-hidden", state.unlocked || hasVault);
+      elements.accountEmailField.classList.toggle("is-hidden", state.unlocked);
+    }
+    if (elements.accountCloudSyncButton) {
+      elements.accountCloudSyncButton.classList.toggle("is-hidden", !state.unlocked);
     }
     elements.exportVaultButton.classList.toggle("is-hidden", !state.unlocked);
     elements.importVaultButton.classList.toggle("is-hidden", !state.unlocked);
@@ -23043,23 +23053,27 @@ function sortTemplates(templates) {
       elements.recoveryStatusNote.textContent = `${baseRecoveryNote} ${initNote}`.trim();
     }
 
+    if (!state.unlocked && elements.accountEmailInput && accountSyncPending && state.emailRecovery.pendingEmail) {
+      elements.accountEmailInput.value = state.emailRecovery.pendingEmail;
+    }
+
     if (elements.accountSyncHint) {
       if (elements.accountSyncTitle) {
         elements.accountSyncTitle.textContent = state.unlocked
-          ? "Połącz kolejne urządzenie"
-          : hasVault
-            ? "Konto i odzyskiwanie"
-            : "Mam już istniejące konto";
+          ? "Synchronizacja konta"
+          : "Mam już konto";
       }
       elements.accountSyncHint.textContent = state.unlocked
         ? verifiedEmailRecoveryConfigured
-          ? `Konto email ${recoveryEmail} jest gotowe do synchronizacji. Kliknij „Synchronizuj” w Panelu Głównym, a potem skopiuj link na drugie urządzenie.`
-          : "Zweryfikuj email odzyskiwania, aby utworzyć wspólne konto synchronizacji dla telefonu i komputera."
+          ? `Email ${recoveryEmail} jest zweryfikowany. Kliknij „Synchronizuj konto teraz”, aby wysłać lub pobrać najnowszy zaszyfrowany backup z Supabase.`
+          : "Zapisz i potwierdź email odzyskiwania powyżej, a potem kliknij „Synchronizuj konto teraz”. To połączy telefon i komputer bez kopiowania linków."
         : hasVault
-          ? "Po wylogowaniu możesz odzyskiwać dostęp, ale parowanie nowego urządzenia wykonaj po zalogowaniu albo na urządzeniu bez lokalnego vaulta."
+          ? accountSyncPending
+            ? "Wpisz kod z maila i kliknij „Synchronizuj konto”. Lokalna zaszyfrowana kopia zostanie zastąpiona backupem przypisanym do tego emaila, a potem zalogujesz się hasłem tego konta."
+            : "Masz już konto na innym urządzeniu? Wpisz email, wyślij kod i zsynchronizuj najnowszy backup z Supabase. Potem zalogujesz się hasłem przypisanym do tego konta."
           : accountSyncPending
-            ? "Wpisz kod z maila i kliknij „Pobierz konto i przejdź do logowania”. Po pobraniu zalogujesz się lokalnym hasłem z głównego urządzenia."
-            : "Masz już konto? Wpisz email, wyślij kod i pobierz aktualną zaszyfrowaną kopię z Supabase bez tworzenia nowego lokalnego konta.";
+            ? "Wpisz kod z maila i kliknij „Synchronizuj konto”. Po pobraniu backupu zalogujesz się lokalnym hasłem z głównego urządzenia."
+            : "Nie twórz nowego konta, jeśli masz już dane w BeTheOne. Wpisz email, wyślij kod i pobierz aktualną zaszyfrowaną kopię z Supabase.";
     }
   }
 
@@ -23095,6 +23109,9 @@ function sortTemplates(templates) {
     }
     if (elements.importAccountSyncButton) {
       elements.importAccountSyncButton.disabled = !enabled;
+    }
+    if (elements.accountCloudSyncButton) {
+      elements.accountCloudSyncButton.disabled = !enabled;
     }
     elements.exportVaultButton.disabled = !enabled;
     elements.importVaultButton.disabled = !enabled;
