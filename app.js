@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.05.5";
+  const APP_VERSION = "2026.08.05.7";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -224,6 +224,7 @@
     league: createEmptyLeagueState(),
     version: createEmptyVersionState(),
     localSession: createEmptyLocalSessionState(),
+    installPrompt: createEmptyInstallPromptState(),
     entryPhotoDrafts: [],
     bannerTimeout: null,
     autoLockTimeout: null,
@@ -667,6 +668,8 @@
     appVersionText: document.getElementById("appVersionText"),
     appUpdateReloadButton: document.getElementById("appUpdateReloadButton"),
     appUpdateDismissButton: document.getElementById("appUpdateDismissButton"),
+    installAppButton: document.getElementById("installAppButton"),
+    installAppHint: document.getElementById("installAppHint"),
     statusBanner: document.getElementById("statusBanner"),
     lockablePanels: Array.from(document.querySelectorAll(".app-lockable")),
   };
@@ -685,6 +688,7 @@
     removeMicrocycleView();
     reorganizeTrainingLayout();
     bindEvents();
+    updateInstallAppUi();
     enhanceInlineHelp();
     populateExerciseSuggestions();
     renderHabitWeekdayPicker();
@@ -723,6 +727,7 @@
 
   function registerPwaServiceWorker() {
     if (!("serviceWorker" in navigator) || window.location.protocol === "file:") {
+      updateInstallAppUi();
       return;
     }
 
@@ -756,11 +761,115 @@
           });
 
           registration.update().catch(() => {});
+          updateInstallAppUi();
         })
         .catch(() => {
           showStatus("Nie udało się uruchomić trybu PWA. Aplikacja nadal działa lokalnie w przeglądarce.", true);
+          updateInstallAppUi();
         });
     }, { once: true });
+  }
+
+  function isRunningStandalone() {
+    return Boolean(
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+        || window.navigator.standalone === true
+    );
+  }
+
+  function isLikelyIosDevice() {
+    const userAgent = window.navigator.userAgent || "";
+    const platform = window.navigator.platform || "";
+    return /iphone|ipad|ipod/i.test(userAgent)
+      || (platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+  }
+
+  function isLikelyMobileDevice() {
+    return /android|iphone|ipad|ipod|mobile/i.test(window.navigator.userAgent || "");
+  }
+
+  function getInstallFallbackMessage() {
+    if (window.location.protocol !== "https:" && !LOCAL_ONLY_HOSTS.has(window.location.hostname)) {
+      return "Instalacja PWA wymaga HTTPS. Otwórz BeTheOne z adresu GitHub Pages zaczynającego się od https://.";
+    }
+
+    if (isLikelyIosDevice()) {
+      return "Na iPhonie lub iPadzie otwórz aplikację w Safari, kliknij Udostępnij, a potem wybierz „Do ekranu początkowego”. iOS nie udostępnia aplikacjom webowym takiego samego okna instalacji jak Android i desktop.";
+    }
+
+    if (isLikelyMobileDevice()) {
+      return "Jeśli okno instalacji nie pojawiło się automatycznie, otwórz menu przeglądarki na telefonie i wybierz „Zainstaluj aplikację” albo „Dodaj do ekranu głównego”.";
+    }
+
+    return "Jeśli okno instalacji jeszcze się nie pojawia, odśwież stronę po wdrożeniu GitHub Pages i sprawdź menu przeglądarki: „Zainstaluj aplikację” lub „Aplikacje”.";
+  }
+
+  function updateInstallAppUi() {
+    if (!elements.installAppButton || !elements.installAppHint) {
+      return;
+    }
+
+    const standalone = isRunningStandalone() || state.installPrompt.installed;
+    elements.installAppButton.disabled = false;
+    elements.installAppButton.classList.toggle("is-installed", standalone);
+    elements.installAppButton.textContent = standalone ? "Aplikacja pobrana" : "Pobierz aplikację";
+
+    if (standalone) {
+      elements.installAppHint.textContent = "BeTheOne działa już jak zainstalowana aplikacja na tym urządzeniu.";
+      return;
+    }
+
+    elements.installAppHint.textContent = state.installPrompt.promptReady
+      ? "PWA jest gotowe. Kliknij przycisk, aby otworzyć okno instalacji."
+      : "Przycisk działa na komputerze i telefonie. Jeśli przeglądarka nie pokaże okna instalacji, wyświetlimy instrukcję dla urządzenia.";
+  }
+
+  function handleBeforeInstallPrompt(event) {
+    event.preventDefault();
+    state.installPrompt.deferredPrompt = event;
+    state.installPrompt.promptReady = true;
+    updateInstallAppUi();
+  }
+
+  function handleAppInstalled() {
+    state.installPrompt.deferredPrompt = null;
+    state.installPrompt.promptReady = false;
+    state.installPrompt.installed = true;
+    updateInstallAppUi();
+    showStatus("BeTheOne zostało pobrane jako aplikacja PWA.");
+  }
+
+  async function handleInstallAppClick() {
+    if (isRunningStandalone() || state.installPrompt.installed) {
+      showStatus("BeTheOne jest już uruchomione jako aplikacja na tym urządzeniu.");
+      updateInstallAppUi();
+      return;
+    }
+
+    const promptEvent = state.installPrompt.deferredPrompt;
+    if (!promptEvent) {
+      showStatus(getInstallFallbackMessage(), true);
+      updateInstallAppUi();
+      return;
+    }
+
+    try {
+      promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      state.installPrompt.deferredPrompt = null;
+      state.installPrompt.promptReady = false;
+
+      if (choice && choice.outcome === "accepted") {
+        state.installPrompt.installed = true;
+        showStatus("Instalacja BeTheOne została rozpoczęta.");
+      } else {
+        showStatus("Instalacja została anulowana. Przycisk zostaje dostępny, więc możesz wrócić do niej później.");
+      }
+    } catch (_error) {
+      showStatus(getInstallFallbackMessage(), true);
+    } finally {
+      updateInstallAppUi();
+    }
   }
 
   function markServiceWorkerUpdateReady(worker) {
@@ -805,6 +914,19 @@
     }
     if (elements.appUpdateDismissButton) {
       elements.appUpdateDismissButton.addEventListener("click", dismissAppUpdateNotice);
+    }
+    if (elements.installAppButton) {
+      elements.installAppButton.addEventListener("click", handleInstallAppClick);
+    }
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    if (window.matchMedia) {
+      const standaloneQuery = window.matchMedia("(display-mode: standalone)");
+      if (standaloneQuery.addEventListener) {
+        standaloneQuery.addEventListener("change", updateInstallAppUi);
+      } else if (standaloneQuery.addListener) {
+        standaloneQuery.addListener(updateInstallAppUi);
+      }
     }
     elements.saveRecoveryButton.addEventListener("click", handleSaveRecoverySetup);
     elements.sendRecoveryEmailButton.addEventListener("click", handleStartRecoveryEmailVerification);
@@ -1069,6 +1191,14 @@
       restoreAttempted: false,
       lastTouchAt: 0,
       savePending: false,
+    };
+  }
+
+  function createEmptyInstallPromptState() {
+    return {
+      deferredPrompt: null,
+      installed: isRunningStandalone(),
+      promptReady: false,
     };
   }
 
