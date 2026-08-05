@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  --ui-font-scale: 1;
+  --ui-density: 1;
   --bg: #040406;
   --bg-deep: #0b0b10;
   --panel: rgba(11, 12, 18, 0.9);
@@ -23,6 +25,25 @@
   --radius-md: 12px;
   --font-body: "Aptos", "Bahnschrift", "Segoe UI Variable Text", "Segoe UI", sans-serif;
   --font-display: "Georgia", "Constantia", "Palatino Linotype", serif;
+}
+
+html {
+  font-size: calc(16px * var(--ui-font-scale));
+}
+
+html[data-ui-scale="compact"] {
+  --ui-font-scale: 0.88;
+  --ui-density: 0.82;
+}
+
+html[data-ui-scale="medium"] {
+  --ui-font-scale: 0.95;
+  --ui-density: 0.92;
+}
+
+html[data-ui-scale="large"] {
+  --ui-font-scale: 1;
+  --ui-density: 1;
 }
 
 * {
@@ -876,7 +897,7 @@ select {
 }
 
 .panel {
-  padding: 1.4rem;
+  padding: calc(1.4rem * var(--ui-density));
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 1.25rem;
@@ -937,7 +958,7 @@ select {
 .field textarea,
 .field select {
   width: 100%;
-  padding: 0.9rem 1rem;
+  padding: calc(0.9rem * var(--ui-density)) calc(1rem * var(--ui-density));
   border: 1px solid rgba(255, 82, 133, 0.18);
   border-radius: 0.95rem;
   background: rgba(9, 10, 16, 0.96);
@@ -1123,6 +1144,17 @@ select option:hover,
   max-width: 58rem;
 }
 
+.login-install-actions {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+  min-width: min(100%, 16rem);
+}
+
+.ui-scale-field {
+  min-width: 13rem;
+}
+
 .install-app-button {
   flex: 0 0 auto;
   min-width: 13.5rem;
@@ -1146,6 +1178,37 @@ select option:hover,
   box-shadow: 0 0 0 4px rgba(45, 212, 128, 0.1), 0 16px 34px rgba(12, 85, 54, 0.26);
 }
 
+.login-account-sync-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 82, 133, 0.16);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 45, 103, 0.14), transparent 32%),
+    linear-gradient(145deg, rgba(13, 14, 21, 0.92), rgba(6, 7, 12, 0.98));
+}
+
+.login-account-sync-card h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.7vw, 1.42rem);
+}
+
+.account-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.account-sync-actions .button {
+  min-height: 2.7rem;
+}
+
 .inline-template-create {
   display: grid;
   grid-template-columns: minmax(14rem, 1fr) auto auto;
@@ -1166,7 +1229,7 @@ select option:hover,
   appearance: none;
   border: 1px solid rgba(255, 82, 133, 0.16);
   border-radius: 999px;
-  padding: 0.85rem 1.15rem;
+  padding: calc(0.85rem * var(--ui-density)) calc(1.15rem * var(--ui-density));
   background: linear-gradient(180deg, rgba(18, 19, 28, 0.96), rgba(8, 8, 13, 0.96));
   color: #f6eef1;
   cursor: pointer;
@@ -3242,6 +3305,21 @@ canvas {
   text-align: center;
 }
 
+.tab-panel,
+.planner-block,
+.template-builder-card,
+.sync-card,
+.league-card,
+.chart-card,
+.table-wrap {
+  content-visibility: auto;
+  contain-intrinsic-size: 42rem;
+}
+
+.tab-panel.is-hidden {
+  content-visibility: hidden;
+}
+
 @media (max-width: 1120px) {
   .hero {
     flex-wrap: wrap;
@@ -3299,6 +3377,14 @@ canvas {
     align-items: flex-start;
   }
 
+  .login-account-sync-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-sync-actions {
+    justify-content: flex-start;
+  }
+
   .login-field-grid,
   .login-action-grid,
   .login-verification-row {
@@ -3325,6 +3411,31 @@ canvas {
 }
 
 @media (max-width: 760px) {
+  .aurora {
+    display: none;
+  }
+
+  .panel,
+  .command-deck {
+    backdrop-filter: none;
+  }
+
+  .avatar-art-stage::before,
+  .avatar-art-stage::after,
+  .avatar-effect-layer::before,
+  .avatar-effect-layer::after {
+    filter: blur(10px) saturate(116%);
+    animation-duration: 12s;
+  }
+
+  .panel,
+  .planner-block,
+  .template-builder-card,
+  .league-card,
+  .chart-card {
+    animation: none;
+  }
+
   .hero,
   .layout,
   .command-deck {
@@ -3523,6 +3634,15 @@ canvas {
   .login-install-card {
     display: grid;
     padding: 0.95rem;
+  }
+
+  .login-install-actions,
+  .account-sync-actions {
+    width: 100%;
+  }
+
+  .account-sync-actions .button {
+    width: 100%;
   }
 
   .install-app-button {

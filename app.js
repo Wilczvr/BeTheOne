@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.05.7";
+  const APP_VERSION = "2026.08.05.8";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -183,6 +183,14 @@
   const CLOUD_SYNC_META_KEY = "betheone.cloud_sync.meta.v1";
   const CLOUD_SYNC_DEVICE_KEY = "betheone.cloud_sync.device.v1";
   const CLOUD_SYNC_TABLE = "app_vault_sync";
+  const ACCOUNT_LINK_HASH_KEY = "account";
+  const UI_SCALE_STORAGE_KEY = "betheone.ui_scale.v1";
+  const UI_SCALE_OPTIONS = [
+    { value: "compact", label: "Kompaktowy" },
+    { value: "medium", label: "Średni" },
+    { value: "large", label: "Duży" },
+  ];
+  const UI_SCALE_VALUES = UI_SCALE_OPTIONS.map((item) => item.value);
   const EMAIL_RECOVERY_CODE_VERSION = 1;
   const EMAIL_RECOVERY_SUPABASE_VERSION = 2;
   const EMAIL_RECOVERY_TABLE = "app_email_recovery";
@@ -225,6 +233,7 @@
     version: createEmptyVersionState(),
     localSession: createEmptyLocalSessionState(),
     installPrompt: createEmptyInstallPromptState(),
+    uiScale: getInitialUiScale(),
     entryPhotoDrafts: [],
     bannerTimeout: null,
     autoLockTimeout: null,
@@ -670,6 +679,12 @@
     appUpdateDismissButton: document.getElementById("appUpdateDismissButton"),
     installAppButton: document.getElementById("installAppButton"),
     installAppHint: document.getElementById("installAppHint"),
+    uiScaleSelect: document.getElementById("uiScaleSelect"),
+    accountSyncCard: document.getElementById("accountSyncCard"),
+    accountSyncHint: document.getElementById("accountSyncHint"),
+    copyAccountLinkButton: document.getElementById("copyAccountLinkButton"),
+    sendAccountSyncEmailButton: document.getElementById("sendAccountSyncEmailButton"),
+    importAccountSyncButton: document.getElementById("importAccountSyncButton"),
     statusBanner: document.getElementById("statusBanner"),
     lockablePanels: Array.from(document.querySelectorAll(".app-lockable")),
   };
@@ -683,6 +698,7 @@
       return;
     }
 
+    applyUiScale(state.uiScale, { persist: false, announce: false });
     registerPwaServiceWorker();
     removeChartsView();
     removeMicrocycleView();
@@ -722,6 +738,7 @@
 
     syncCommandDeckOrder();
     processPendingLeagueInviteFromLocation();
+    processAccountLinkFromLocation();
     hydrateEmailRecoveryLinkState();
   }
 
@@ -848,7 +865,7 @@
 
     const promptEvent = state.installPrompt.deferredPrompt;
     if (!promptEvent) {
-      showStatus(getInstallFallbackMessage(), true);
+      showStatus(getInstallFallbackMessage());
       updateInstallAppUi();
       return;
     }
@@ -866,9 +883,181 @@
         showStatus("Instalacja została anulowana. Przycisk zostaje dostępny, więc możesz wrócić do niej później.");
       }
     } catch (_error) {
-      showStatus(getInstallFallbackMessage(), true);
+      showStatus(getInstallFallbackMessage());
     } finally {
       updateInstallAppUi();
+    }
+  }
+
+  function getInitialUiScale() {
+    try {
+      const stored = localStorage.getItem(UI_SCALE_STORAGE_KEY);
+      if (UI_SCALE_VALUES.includes(stored)) {
+        return stored;
+      }
+    } catch (_error) {
+      // UI density is only a local preference.
+    }
+
+    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches
+      ? "compact"
+      : "medium";
+  }
+
+  function applyUiScale(value, options = {}) {
+    const nextScale = UI_SCALE_VALUES.includes(value) ? value : "medium";
+    state.uiScale = nextScale;
+    document.documentElement.dataset.uiScale = nextScale;
+
+    if (elements.uiScaleSelect) {
+      elements.uiScaleSelect.value = nextScale;
+    }
+
+    if (options.persist !== false) {
+      try {
+        localStorage.setItem(UI_SCALE_STORAGE_KEY, nextScale);
+      } catch (_error) {
+        // Losing this preference is harmless; the app will fall back on next start.
+      }
+    }
+
+    if (options.announce !== false) {
+      const label = UI_SCALE_OPTIONS.find((item) => item.value === nextScale)?.label || "Średni";
+      showStatus(`Ustawiono rozmiar GUI: ${label}.`);
+    }
+  }
+
+  function handleUiScaleChange() {
+    applyUiScale(elements.uiScaleSelect.value);
+  }
+
+  function getActiveVerifiedEmailRecoveryConfig() {
+    const storedVault = readStoredVault();
+    const storedConfig = readEmailRecoveryConfig(storedVault);
+    const sessionConfig = state.session && state.session.emailRecoveryConfig
+      ? state.session.emailRecoveryConfig
+      : null;
+    return isVerifiedEmailRecoveryConfig(sessionConfig)
+      ? sessionConfig
+      : isVerifiedEmailRecoveryConfig(storedConfig)
+        ? storedConfig
+        : null;
+  }
+
+  function buildAccountLink(email) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("error");
+    url.searchParams.delete("error_code");
+    url.searchParams.delete("error_description");
+    url.hash = `${ACCOUNT_LINK_HASH_KEY}=${encodeURIComponent(normalizeEmailAddress(email))}`;
+    return url.toString();
+  }
+
+  function readAccountLinkEmailFromLocation() {
+    try {
+      const hash = (window.location.hash || "").replace(/^#/, "");
+      if (!hash) {
+        return "";
+      }
+      const hashParams = new URLSearchParams(hash);
+      return normalizeEmailAddress(hashParams.get(ACCOUNT_LINK_HASH_KEY) || "");
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function processAccountLinkFromLocation() {
+    const email = readAccountLinkEmailFromLocation();
+    if (!email) {
+      return;
+    }
+
+    if (elements.recoveryEmailInput) {
+      elements.recoveryEmailInput.value = email;
+    }
+    state.activeTab = "login";
+    applyActiveTab();
+    showStatus("Wczytano link konta. Wyślij kod do tego emaila, wpisz kod z wiadomości i pobierz zaszyfrowane dane z Supabase.");
+  }
+
+  async function handleCopyAccountLink() {
+    try {
+      const config = getActiveVerifiedEmailRecoveryConfig();
+      if (!config || !config.email) {
+        throw new Error("Najpierw zweryfikuj email odzyskiwania. Dopiero wtedy można wygenerować bezpieczny link konta.");
+      }
+
+      const localVault = readStoredVault();
+      if (!localVault) {
+        throw new Error("Brak lokalnego vaulta do powiązania z kontem.");
+      }
+
+      await copyTextValue(buildAccountLink(config.email), "Skopiowano bezpieczny link konta. Otwórz go na drugim urządzeniu i potwierdź email kodem.");
+    } catch (error) {
+      showStatus(error.message || "Nie udało się wygenerować linku konta.", true);
+    }
+  }
+
+  async function handleSendAccountSyncEmail() {
+    try {
+      const email = readRecoveryEmailInput() || readAccountLinkEmailFromLocation();
+      if (!email) {
+        throw new Error("Wpisz email konta, które chcesz połączyć z tym urządzeniem.");
+      }
+      if (!navigator.onLine) {
+        throw new Error("Połączenie konta przez email wymaga internetu.");
+      }
+
+      state.emailRecovery.loading = true;
+      storePendingEmailRecovery(email, "account_sync");
+      runSafeUiStep("updateVaultControls.accountSyncStart", updateVaultControls);
+      await sendSupabaseEmailOtp(email, { shouldCreateUser: false });
+      showStatus("Wysłano kod do konta. Wpisz kod z maila i kliknij „Pobierz konto z Supabase”.");
+    } catch (error) {
+      clearPendingEmailRecovery();
+      showStatus(formatEmailRecoveryError(error, "Nie udało się wysłać kodu do konta."), true);
+    } finally {
+      state.emailRecovery.loading = false;
+      runSafeUiStep("updateVaultControls.accountSyncEnd", updateVaultControls);
+    }
+  }
+
+  async function handleImportAccountFromSupabase() {
+    try {
+      const email = readRecoveryEmailInput() || state.emailRecovery.pendingEmail || readAccountLinkEmailFromLocation();
+      const token = elements.recoveryEmailOtpInput ? normalizeEmailOtpCode(elements.recoveryEmailOtpInput.value) : "";
+      if (!email) {
+        throw new Error("Wpisz email konta, z którego chcesz pobrać dane.");
+      }
+      if (token.length < 4) {
+        throw new Error("Wpisz kod z maila, aby potwierdzić dostęp do konta.");
+      }
+
+      state.emailRecovery.loading = true;
+      state.cloudSync.loading = true;
+      runSafeUiStep("updateVaultControls.accountImportStart", updateVaultControls);
+      updateCloudSyncUi();
+
+      const session = await verifySupabaseEmailOtp(email, token);
+      state.cloudSync.client = ensureEmailRecoveryClient();
+      state.cloudSync.accountEmail = normalizeEmailAddress(email);
+      state.cloudSync.accountUserId = session.user.id;
+      const remoteRecord = await fetchCloudVaultRecord(session.user.id);
+      if (!remoteRecord) {
+        throw new Error("To konto email nie ma jeszcze zaszyfrowanej kopii w Supabase. Najpierw zsynchronizuj dane z głównego urządzenia.");
+      }
+
+      importCloudVaultRecord(remoteRecord);
+      clearPendingEmailRecovery();
+      showStatus("Pobrano zaszyfrowane konto z Supabase. Zaloguj się lokalnym hasłem z głównego urządzenia, aby je odblokować.");
+    } catch (error) {
+      state.cloudSync.error = formatCloudSyncError(error);
+      showStatus(formatEmailRecoveryError(error, state.cloudSync.error || "Nie udało się pobrać konta z Supabase."), true);
+    } finally {
+      state.emailRecovery.loading = false;
+      state.cloudSync.loading = false;
+      runSafeUiStep("updateVaultControls.accountImportEnd", updateVaultControls);
+      updateCloudSyncUi();
     }
   }
 
@@ -917,6 +1106,18 @@
     }
     if (elements.installAppButton) {
       elements.installAppButton.addEventListener("click", handleInstallAppClick);
+    }
+    if (elements.uiScaleSelect) {
+      elements.uiScaleSelect.addEventListener("change", handleUiScaleChange);
+    }
+    if (elements.copyAccountLinkButton) {
+      elements.copyAccountLinkButton.addEventListener("click", handleCopyAccountLink);
+    }
+    if (elements.sendAccountSyncEmailButton) {
+      elements.sendAccountSyncEmailButton.addEventListener("click", handleSendAccountSyncEmail);
+    }
+    if (elements.importAccountSyncButton) {
+      elements.importAccountSyncButton.addEventListener("click", handleImportAccountFromSupabase);
     }
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -1234,6 +1435,9 @@
 
   function createEmptyCloudSyncState() {
     return {
+      client: null,
+      accountEmail: "",
+      accountUserId: "",
       dirty: false,
       loading: false,
       status: "idle",
@@ -1432,7 +1636,9 @@
       label = "Chmura ma nowszą kopię";
       uiState = "remote";
     } else if (state.cloudSync.lastSyncAt) {
-      label = `Zsynchronizowano ${formatTimestamp(state.cloudSync.lastSyncAt)}`;
+      label = state.cloudSync.accountEmail
+        ? `Konto ${state.cloudSync.accountEmail} · ${formatTimestamp(state.cloudSync.lastSyncAt)}`
+        : `Zsynchronizowano ${formatTimestamp(state.cloudSync.lastSyncAt)}`;
       uiState = "synced";
     } else {
       label = "Gotowe do pierwszej synchronizacji";
@@ -1473,14 +1679,39 @@
   }
 
   async function ensureCloudSyncSession() {
+    const emailRecoveryConfig = getActiveVerifiedEmailRecoveryConfig();
+    if (emailRecoveryConfig) {
+      const session = await getStoredEmailRecoverySession(emailRecoveryConfig.email);
+      if (!session || !session.user || session.user.id !== emailRecoveryConfig.supabaseUserId) {
+        throw new Error("Synchronizacja jest przypisana do zweryfikowanego emaila. Wyślij kod w sekcji logowania, potwierdź email i dopiero wtedy kliknij „Synchronizuj”.");
+      }
+      state.cloudSync.client = ensureEmailRecoveryClient();
+      state.cloudSync.accountEmail = emailRecoveryConfig.email;
+      state.cloudSync.accountUserId = emailRecoveryConfig.supabaseUserId;
+      return session;
+    }
+
     if (!state.league.client && !initializeLeagueClient()) {
       throw new Error(state.league.error || "Brak konfiguracji Supabase dla synchronizacji.");
     }
-    return ensureLeagueSession();
+    const session = await ensureLeagueSession();
+    state.cloudSync.client = state.league.client;
+    state.cloudSync.accountEmail = "";
+    state.cloudSync.accountUserId = session.user.id;
+    return session;
+  }
+
+  function getCloudSyncClient() {
+    return state.cloudSync.client || state.league.client || state.emailRecovery.client;
   }
 
   async function fetchCloudVaultRecord(userId) {
-    const { data, error } = await state.league.client
+    const client = getCloudSyncClient();
+    if (!client) {
+      throw new Error("Brak aktywnego klienta Supabase dla synchronizacji.");
+    }
+
+    const { data, error } = await client
       .from(CLOUD_SYNC_TABLE)
       .select("user_id,vault,vault_updated_at,checksum,device_id,synced_at")
       .eq("user_id", userId)
@@ -1493,6 +1724,11 @@
   }
 
   async function uploadCloudVaultRecord(session, vaultRecord, checksum) {
+    const client = getCloudSyncClient();
+    if (!client) {
+      throw new Error("Brak aktywnego klienta Supabase dla synchronizacji.");
+    }
+
     const syncedAt = new Date().toISOString();
     const payload = {
       user_id: session.user.id,
@@ -1503,7 +1739,7 @@
       synced_at: syncedAt,
     };
 
-    const { data, error } = await state.league.client
+    const { data, error } = await client
       .from(CLOUD_SYNC_TABLE)
       .upsert(payload, { onConflict: "user_id" })
       .select("user_id,vault_updated_at,checksum,device_id,synced_at")
@@ -4105,10 +4341,9 @@
     await persistVault();
     elements.recoveryEmailInput.value = verifiedEmail;
     elements.recoveryEmailOtpInput.value = "";
-    await clearEmailRecoveryAuthSession();
     state.emailRecovery.linkSessionReady = false;
     runSafeUiStep("updateVaultControls.finalizeEmailRecovery", updateVaultControls);
-    showStatus("Email odzyskiwania został zweryfikowany. Po wylogowaniu możesz wysłać hasło tymczasowe.");
+    showStatus("Email odzyskiwania został zweryfikowany i może teraz służyć jako konto synchronizacji między urządzeniami.");
   }
 
   async function completePendingEmailVerificationAfterUnlock() {
@@ -6163,7 +6398,6 @@
     } catch (error) {
       showStatus(formatEmailRecoveryError(error, "Nie udało się potwierdzić emaila."), true);
     } finally {
-      await clearEmailRecoveryAuthSession();
       state.emailRecovery.loading = false;
       runSafeUiStep("updateVaultControls.emailVerifyEnd", updateVaultControls);
     }
@@ -22669,7 +22903,9 @@ function sortTemplates(templates) {
     const failedUnlockAttempts = getFailedUnlockAttempts();
     const emergencyInitUnlocked = isEmergencyInitUnlocked();
     const emailVerificationPending = state.emailRecovery.pendingPurpose === "verify" && Boolean(state.emailRecovery.pendingEmail);
+    const accountSyncPending = state.emailRecovery.pendingPurpose === "account_sync" && Boolean(state.emailRecovery.pendingEmail);
     const showEmailVerificationControls = state.unlocked && emailVerificationPending;
+    const showOtpControls = showEmailVerificationControls || accountSyncPending;
     const loginLabel = state.unlocked ? "Ustawienia logowania" : "Logowanie";
 
     if (elements.loginTabButton) {
@@ -22696,6 +22932,15 @@ function sortTemplates(templates) {
     elements.sendRecoveryEmailButton.disabled = !state.unlocked || emailRecoveryBusy || !navigator.onLine;
     elements.sendRecoveryCodeEmailButton.disabled = !showEmailVerificationControls || emailRecoveryBusy || !navigator.onLine;
     elements.emailReminderButton.disabled = !hasVault || state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || !navigator.onLine;
+    if (elements.copyAccountLinkButton) {
+      elements.copyAccountLinkButton.disabled = !state.unlocked || !verifiedEmailRecoveryConfigured || emailRecoveryBusy || !navigator.onLine;
+    }
+    if (elements.sendAccountSyncEmailButton) {
+      elements.sendAccountSyncEmailButton.disabled = emailRecoveryBusy || !navigator.onLine || (hasVault && !state.unlocked);
+    }
+    if (elements.importAccountSyncButton) {
+      elements.importAccountSyncButton.disabled = state.unlocked || hasVault || emailRecoveryBusy || !navigator.onLine || !accountSyncPending;
+    }
     elements.exportVaultButton.disabled = !state.unlocked || !hasVault;
     elements.importVaultButton.disabled = !state.unlocked;
 
@@ -22704,8 +22949,8 @@ function sortTemplates(templates) {
     elements.recoveryQuestionField.classList.toggle("is-hidden", hasVault && !state.unlocked);
     elements.recoveryAnswerField.classList.toggle("is-hidden", hasVault && !state.unlocked);
     elements.recoveryEmailField.classList.toggle("is-hidden", hasVault && !state.unlocked);
-    elements.emailVerificationRow.classList.toggle("is-hidden", !showEmailVerificationControls);
-    elements.recoveryEmailOtpField.classList.toggle("is-hidden", !showEmailVerificationControls);
+    elements.emailVerificationRow.classList.toggle("is-hidden", !showOtpControls);
+    elements.recoveryEmailOtpField.classList.toggle("is-hidden", !showOtpControls);
     elements.initVaultButton.classList.toggle("is-hidden", state.unlocked);
     elements.unlockVaultButton.classList.toggle("is-hidden", state.unlocked);
     elements.lockVaultButton.classList.toggle("is-hidden", !state.unlocked);
@@ -22713,6 +22958,15 @@ function sortTemplates(templates) {
     elements.sendRecoveryEmailButton.classList.toggle("is-hidden", !state.unlocked);
     elements.sendRecoveryCodeEmailButton.classList.toggle("is-hidden", !showEmailVerificationControls);
     elements.emailReminderButton.classList.toggle("is-hidden", !hasVault || state.unlocked || !verifiedEmailRecoveryConfigured);
+    if (elements.copyAccountLinkButton) {
+      elements.copyAccountLinkButton.classList.toggle("is-hidden", !state.unlocked);
+    }
+    if (elements.sendAccountSyncEmailButton) {
+      elements.sendAccountSyncEmailButton.classList.toggle("is-hidden", hasVault && !state.unlocked);
+    }
+    if (elements.importAccountSyncButton) {
+      elements.importAccountSyncButton.classList.toggle("is-hidden", state.unlocked || hasVault);
+    }
     elements.exportVaultButton.classList.toggle("is-hidden", !state.unlocked);
     elements.importVaultButton.classList.toggle("is-hidden", !state.unlocked);
     elements.recoveryResetSection.classList.toggle("is-hidden", !hasVault || state.unlocked || (!recoveryConfigured && !anyEmailRecoveryConfigured));
@@ -22724,7 +22978,9 @@ function sortTemplates(templates) {
     if (!hasVault) {
       resetFailedUnlockAttempts();
       elements.recoveryQuestionInput.value = "";
-      elements.recoveryEmailInput.value = "";
+      if (!accountSyncPending && !readAccountLinkEmailFromLocation()) {
+        elements.recoveryEmailInput.value = "";
+      }
       elements.recoveryPromptText.textContent = "";
       elements.recoveryStatusNote.textContent = "Przy zakładaniu nowego konta możesz od razu dodać pytanie pomocnicze do lokalnego odzyskiwania dostępu.";
     } else if (state.unlocked) {
@@ -22761,6 +23017,18 @@ function sortTemplates(templates) {
         : `Awaryjne nadpisanie konta odblokuje się po 5 błędnych logowaniach. Pozostało ${Math.max(EMERGENCY_INIT_THRESHOLD - failedUnlockAttempts, 0)} prób.`;
       elements.recoveryStatusNote.textContent = `${baseRecoveryNote} ${initNote}`.trim();
     }
+
+    if (elements.accountSyncHint) {
+      elements.accountSyncHint.textContent = state.unlocked
+        ? verifiedEmailRecoveryConfigured
+          ? `Konto email ${recoveryEmail} jest gotowe do synchronizacji. Skopiuj link na drugie urządzenie i wykonaj sync przez Supabase.`
+          : "Zweryfikuj email odzyskiwania, aby utworzyć wspólne konto synchronizacji dla telefonu i komputera."
+        : hasVault
+          ? "Po wylogowaniu możesz odzyskiwać dostęp, ale parowanie nowego urządzenia wykonaj po zalogowaniu albo na urządzeniu bez lokalnego vaulta."
+          : accountSyncPending
+            ? "Wpisz kod z maila i kliknij „Pobierz konto z Supabase”. Po pobraniu zalogujesz się lokalnym hasłem z głównego urządzenia."
+            : "Otwórz link konta z głównego urządzenia albo wpisz email, wyślij kod i pobierz zaszyfrowaną kopię z Supabase.";
+    }
   }
 
   function syncLockableState() {
@@ -22787,6 +23055,15 @@ function sortTemplates(templates) {
     elements.sendRecoveryEmailButton.disabled = !enabled;
     elements.sendRecoveryCodeEmailButton.disabled = !enabled;
     elements.emailReminderButton.disabled = !enabled;
+    if (elements.copyAccountLinkButton) {
+      elements.copyAccountLinkButton.disabled = !enabled;
+    }
+    if (elements.sendAccountSyncEmailButton) {
+      elements.sendAccountSyncEmailButton.disabled = !enabled;
+    }
+    if (elements.importAccountSyncButton) {
+      elements.importAccountSyncButton.disabled = !enabled;
+    }
     elements.exportVaultButton.disabled = !enabled;
     elements.importVaultButton.disabled = !enabled;
     if (elements.cloudSyncButton) {

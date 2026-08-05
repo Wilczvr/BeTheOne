@@ -3,7 +3,7 @@
   "name": "BeTheOne",
   "short_name": "BeTheOne",
   "description": "Prywatna aplikacja do dyscypliny, treningu i progresu fitness.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],

@@ -13,11 +13,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260805-install-button-v1">
+  <link rel="stylesheet" href="styles.css?v=20260805-sync-gui-v1">
   <script src="vendor/supabase.min.js?v=20260624b" defer></script>
   <script src="league-config.js?v=20260624b" defer></script>
   <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js?v=20260805-install-button-v1" defer></script>
+  <script src="app.js?v=20260805-sync-gui-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
@@ -89,7 +89,18 @@
           <h3>Pobierz BeTheOne na telefon lub komputer</h3>
           <p id="installAppHint" class="security-note">Kliknij przycisk, aby zainstalować aplikację. Jeśli przeglądarka nie pokaże okna instalacji, dostaniesz krótką instrukcję dla swojego urządzenia.</p>
         </div>
-        <button id="installAppButton" class="button button-primary install-app-button" type="button">Pobierz aplikację</button>
+        <div class="login-install-actions">
+          <label class="field ui-scale-field">
+            <span>Rozmiar GUI</span>
+            <select id="uiScaleSelect" aria-label="Rozmiar interfejsu">
+              <option value="compact">Kompaktowy</option>
+              <option value="medium">Średni</option>
+              <option value="large">Duży</option>
+            </select>
+            <p class="field-hint">Na telefonie kompaktowy pokazuje więcej danych bez ciągłego przewijania.</p>
+          </label>
+          <button id="installAppButton" class="button button-primary install-app-button" type="button">Pobierz aplikację</button>
+        </div>
       </div>
 
       <div class="security-grid login-field-grid">
@@ -148,6 +159,19 @@
       <div class="action-row login-backup-actions">
         <button id="exportVaultButton" class="button button-subtle">Eksport kopii</button>
         <button id="importVaultButton" class="button button-subtle">Import kopii</button>
+      </div>
+
+      <div id="accountSyncCard" class="login-account-sync-card">
+        <div>
+          <p class="eyebrow">Konto i urządzenia</p>
+          <h3>Połącz telefon i komputer przez email</h3>
+          <p id="accountSyncHint" class="security-note">Zweryfikowany email może działać jak konto BeTheOne. Link nie zawiera hasła ani danych, tylko pomaga otworzyć ten sam email na drugim urządzeniu.</p>
+        </div>
+        <div class="account-sync-actions">
+          <button id="copyAccountLinkButton" class="button button-subtle" type="button">Skopiuj link konta</button>
+          <button id="sendAccountSyncEmailButton" class="button button-subtle" type="button">Wyślij kod do konta</button>
+          <button id="importAccountSyncButton" class="button button-primary" type="button">Pobierz konto z Supabase</button>
+        </div>
       </div>
 
       <input id="importVaultInput" type="file" accept="application/json" hidden>
