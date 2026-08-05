@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://hpwkmhsbvqzsxqjkbccr.supabase.co wss://hpwkmhsbvqzsxqjkbccr.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#090008">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BeTheOne">
+  <title>BeTheOne</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css?v=20260805-login-settings-v1">
+  <script src="vendor/supabase.min.js?v=20260624b" defer></script>
+  <script src="league-config.js?v=20260624b" defer></script>
+  <script src="vendor/qrcode.js" defer></script>
+  <script src="app.js?v=20260805-login-settings-v1" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
+  <div class="aurora aurora-left" aria-hidden="true"></div>
+  <div class="aurora aurora-right" aria-hidden="true"></div>
+
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Dyscyplina to ogień, nie pozwól mu zgasnąć.</p>
+      <h1>BeTheOne</h1>
+    </div>
+    <section id="heroAvatar" class="hero-avatar hero-avatar-locked" aria-live="polite">
+      <div class="hero-avatar-copy">
+        <span class="badge-label">Avatar Goal</span>
+        <strong id="heroAvatarName">Ruby Focus</strong>
+      </div>
+      <div id="heroAvatarStage" class="hero-avatar-stage avatar-art-stage" data-avatar-species-current="panda" data-avatar-mood-current="calm" data-avatar-effect-current="ruby_aura" aria-hidden="true">
+        <div class="avatar-rig">
+          <span class="avatar-effect-layer" aria-hidden="true"></span>
+          <span class="avatar-stage-shadow" aria-hidden="true"></span>
+          <img
+            id="heroAvatarImage"
+            class="avatar-art avatar-art-hero avatar-art-image"
+            src="assets/avatars/panda-calm.png"
+            alt="Avatar Panda w trybie lagodnym"
+            loading="eager"
+            decoding="async"
+          >
+        </div>
+      </div>
+    </section>
+    <div class="hero-badge">
+      <span class="badge-label">Tryb Prywatny</span>
+      <span class="hero-badge-copy">To czas na Twóją kontrolę.</span>
+    </div>
+  </header>
+
+  <nav id="commandDeck" class="command-deck" aria-label="Główne zakładki aplikacji">
+    <div class="command-deck-inner">
+      <button class="command-tab" type="button" data-tab-button="dashboard">Panel Główny</button>
+      <button class="command-tab" type="button" data-tab-button="journal">Dziennik</button>
+      <button class="command-tab" type="button" data-tab-button="training">Trening</button>
+      <button class="command-tab" type="button" data-tab-button="history">Historia</button>
+      <button class="command-tab" type="button" data-tab-button="league">Liga</button>
+      <button class="command-tab" type="button" data-tab-button="calculator">Kalkulator</button>
+      <button class="command-tab" type="button" data-tab-button="avatar">Avatar</button>
+      <button class="command-tab" type="button" data-tab-button="plan">Plan</button>
+      <button class="command-tab" type="button" data-tab-button="physique">Sylwetka</button>
+      <button class="command-tab" type="button" data-tab-button="analysis">Analiza AI</button>
+      <button class="command-tab" type="button" data-tab-button="insights">Wnioski</button>
+      <button class="command-tab" type="button" data-tab-button="onboarding">Onboarding</button>
+      <button class="command-tab is-active" type="button" data-tab-button="login">Logowanie</button>
+    </div>
+  </nav>
+
+  <main id="appMain" class="layout cockpit-layout">
+    <section id="loginSection" class="panel security-panel tab-panel" data-tab-panel="login">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Dostęp lokalny</p>
+          <h2 id="loginSectionTitle">Logowanie</h2>
+        </div>
+        <span id="vaultStatus" class="status-pill status-locked">Zablokowany</span>
+      </div>
+
+      <div class="security-grid login-field-grid">
+        <label id="passphraseField" class="field">
+          <span>Hasło konta lokalnego</span>
+          <input id="passphraseInput" type="password" minlength="12" maxlength="128" autocomplete="off" placeholder="Minimum 12 znaków">
+          <p class="field-hint">To hasło służy tylko do odszyfrowania lokalnego magazynu. Minimum 12 znaków i najlepiej coś, czego nie używasz w innych miejscach.</p>
+        </label>
+        <label id="confirmPassphraseField" class="field">
+          <span>Powtórz hasło</span>
+          <input id="confirmPassphraseInput" type="password" minlength="12" maxlength="128" autocomplete="off" placeholder="Powtórz tylko przy inicjalizacji">
+          <p class="field-hint">To pole jest potrzebne tylko przy tworzeniu nowego konta lokalnego. Przy zwykłym logowaniu możesz je zostawić puste.</p>
+        </label>
+        <label id="recoveryQuestionField" class="field">
+          <span>Pytanie pomocnicze (opcjonalnie)</span>
+          <input id="recoveryQuestionInput" type="text" maxlength="120" autocomplete="off" placeholder="Np. Jakie było Twoje pierwsze miasto zawodów?">
+          <p class="field-hint">Jeśli je ustawisz, aplikacja pozwoli lokalnie odzyskać dostęp i nadać nowe hasło bez utraty danych. Użyj pytania i odpowiedzi, których nie da się łatwo zgadnąć.</p>
+        </label>
+        <label id="recoveryAnswerField" class="field">
+          <span>Odpowiedź pomocnicza (opcjonalnie)</span>
+          <input id="recoveryAnswerInput" type="password" minlength="3" maxlength="128" autocomplete="off" placeholder="Odpowiedź do pytania pomocniczego">
+          <p class="field-hint">Odpowiedź nie jest zapisywana jawnie. Służy tylko do utworzenia lokalnego klucza odzyskiwania.</p>
+        </label>
+        <label id="recoveryEmailField" class="field">
+          <span>Email odzyskiwania (opcjonalnie)</span>
+          <input id="recoveryEmailInput" type="email" maxlength="160" autocomplete="email" placeholder="np. twój@email.pl">
+          <p class="field-hint">Po zapisaniu aplikacja wyśle kod przez Supabase. Dopiero zweryfikowany email pozwoli odzyskać dostęp po wylogowaniu.</p>
+        </label>
+      </div>
+
+      <div class="login-action-grid" aria-label="Akcje logowania i odzyskiwania">
+        <div class="field-action-row login-password-actions">
+          <button id="initVaultButton" class="button button-primary">Utwórz konto</button>
+          <button id="unlockVaultButton" class="button">Zaloguj</button>
+          <button id="lockVaultButton" class="button button-subtle">Wyloguj</button>
+        </div>
+        <div class="field-action-row login-question-actions">
+          <button id="saveRecoveryButton" class="button button-subtle">Zapisz pytanie pomocnicze</button>
+        </div>
+        <div class="field-action-row login-email-actions">
+          <button id="sendRecoveryEmailButton" class="button button-subtle" type="button">Zapisz mail i wyślij kod</button>
+        </div>
+      </div>
+
+      <div id="emailVerificationRow" class="login-verification-row is-hidden">
+        <label id="recoveryEmailOtpField" class="field">
+          <span>Kod weryfikacyjny z maila</span>
+          <input id="recoveryEmailOtpInput" type="text" maxlength="24" autocomplete="one-time-code" placeholder="Np. 123456">
+          <p class="field-hint">Wpisz kod z wiadomości Supabase, aby potwierdzić, że ten email naprawdę należy do Ciebie.</p>
+        </label>
+        <div class="field-action-row login-otp-actions">
+          <button id="sendRecoveryCodeEmailButton" class="button button-primary" type="button">Potwierdź mail</button>
+        </div>
+      </div>
+
+      <div class="action-row login-backup-actions">
+        <button id="exportVaultButton" class="button button-subtle">Eksport kopii</button>
+        <button id="importVaultButton" class="button button-subtle">Import kopii</button>
+      </div>
+
+      <input id="importVaultInput" type="file" accept="application/json" hidden>
+
+      <div id="recoveryResetSection" class="security-recovery is-hidden">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Odzyskiwanie dostępu</p>
+            <h3>Reset hasła lokalnego</h3>
+          </div>
+        </div>
+        <p id="recoveryPromptText" class="security-note"></p>
+        <p class="security-method-note">Wybierz jedną metodę odzyskiwania: pytanie pomocnicze albo zweryfikowany email. Nie musisz używać obu naraz.</p>
+
+        <div class="security-grid">
+          <label id="recoveryAnswerUnlockField" class="field recovery-method-field recovery-question-field">
+            <strong class="recovery-method-title">Metoda 1: pytanie pomocnicze</strong>
+            <span>Odpowiedź pomocnicza</span>
+            <input id="recoveryAnswerUnlockInput" type="password" minlength="3" maxlength="128" autocomplete="off" placeholder="Wpisz odpowiedź pomocniczą">
+            <p class="field-hint">Użyj tej metody tylko wtedy, gdy pamiętasz odpowiedź. Kod z maila nie jest tu potrzebny.</p>
+          </label>
+          <label id="emailRecoveryCodeField" class="field recovery-method-field recovery-email-field is-hidden">
+            <strong class="recovery-method-title">Metoda 2: zweryfikowany email</strong>
+            <span>Hasło tymczasowe / kod z maila</span>
+            <input id="emailRecoveryCodeInput" type="text" maxlength="80" autocomplete="one-time-code" placeholder="Np. 123456">
+            <p class="field-hint">Najpierw kliknij „Wyślij hasło tymczasowe”, potem wpisz kod z maila tutaj. Nie klikaj linku z wiadomości, jeśli stary szablon maila jeszcze go pokazuje.</p>
+          </label>
+          <label class="field">
+            <span>Nowe hasło</span>
+            <input id="recoveryNewPassphraseInput" type="password" minlength="12" maxlength="128" autocomplete="off" placeholder="Nowe hasło lokalne">
+          </label>
+          <label class="field">
+            <span>Powtórz nowe hasło</span>
+            <input id="recoveryConfirmPassphraseInput" type="password" minlength="12" maxlength="128" autocomplete="off" placeholder="Powtórz nowe hasło">
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button id="recoverVaultButton" class="button button-primary" type="button">Ustaw nowe hasło pytaniem</button>
+          <button id="emailReminderButton" class="button button-subtle" type="button">Wyślij hasło tymczasowe</button>
+          <button id="recoverVaultByEmailCodeButton" class="button button-subtle" type="button">Ustaw nowe hasło mailem</button>
+        </div>
+      </div>
+
+      <section class="sync-panel-shell is-hidden" hidden>
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Synchronizacja bez serwera</p>
+            <h3>PC + telefon przez QR lub link / kod</h3>
+          </div>
+          <span id="syncStatusBadge" class="status-pill status-locked">Offline sync</span>
+        </div>
+
+        <p class="security-note">
+          Ten tryb przesyła zaszyfrowany vault bezpośrednio między urządzeniami. Dla najlepszego efektu trzymaj oba urządzenia
+          na tej samej sieci Wi-Fi i otwórz aplikację na obu ekranach.
+        </p>
+
+        <div class="sync-grid">
+          <article class="sync-card">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">1. Źródło danych</p>
+                <h3>Wyślij z tego urządzenia</h3>
+              </div>
+            </div>
+
+            <ol class="sync-steps">
+              <li>Wygeneruj prywatny kod parowania.</li>
+              <li>Na drugim urządzeniu zeskanuj go w aplikacji albo wklej do pola odbioru.</li>
+              <li>Gdy drugie urządzenie wygeneruje odpowiedź, zeskanuj ją tutaj albo wklej poniżej.</li>
+            </ol>
+
+            <div class="action-row">
+              <button id="startSyncSourceButton" class="button button-primary" type="button">Generuj kod parowania</button>
+              <button id="resetSyncSourceButton" class="button button-subtle" type="button">Wyczyść</button>
+            </div>
+
+            <p id="sourceSyncStatus" class="security-note">Nie ma jeszcze aktywnej sesji wysyłki.</p>
+
+            <div id="sourceSyncQr" class="sync-qr-output" aria-live="polite"></div>
+
+            <label class="field field-wide">
+              <span>Prywatny link / kod zaproszenia</span>
+              <textarea id="sourceSyncTokenOutput" readonly placeholder="Tutaj pojawi się link albo kod do otwarcia na drugim urządzeniu."></textarea>
+              <p class="field-hint">Jeśli aplikacja nie ma wspólnego publicznego adresu na obu urządzeniach, potraktuj to jako kod do skopiowania albo zeskanowania wewnątrz aplikacji.</p>
+            </label>
+
+            <div class="action-row">
+              <button id="copySourceSyncButton" class="button" type="button">Kopiuj link / kod</button>
+            </div>
+
+            <label class="field field-wide">
+              <span>Odpowiedź z urządzenia odbierającego</span>
+              <textarea id="sourceSyncAnswerInput" placeholder="Wklej odpowiedź z telefonu albo zeskanuj jej QR."></textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="pasteSourceAnswerButton" class="button" type="button">Wklej odpowiedź</button>
+              <button id="scanSourceAnswerButton" class="button" type="button">Skanuj odpowiedź</button>
+              <button id="applySourceAnswerButton" class="button button-primary" type="button">Połącz i wyślij dane</button>
+            </div>
+
+            <div id="sourceSyncProgressShell" class="sync-progress-shell is-hidden">
+              <div class="progress-track">
+                <div id="sourceSyncProgressFill" class="progress-fill" style="width: 0%"></div>
+              </div>
+              <p id="sourceSyncProgressText" class="security-note">Oczekiwanie na transfer.</p>
+            </div>
+          </article>
+
+          <article class="sync-card">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">2. Urządzenie docelowe</p>
+                <h3>Odbierz na tym urządzeniu</h3>
+              </div>
+            </div>
+
+            <ol class="sync-steps">
+              <li>Wklej kod z komputera albo zeskanuj go kamerą.</li>
+              <li>Aplikacja utworzy odpowiedź i pokaże ją jako QR oraz kod tekstowy.</li>
+              <li>Przenieś odpowiedź z powrotem na urządzenie wysyłające i poczekaj na odbiór vaulta.</li>
+            </ol>
+
+            <label class="field field-wide">
+              <span>Link / kod zaproszenia z komputera</span>
+              <textarea id="targetSyncOfferInput" placeholder="Wklej zaproszenie z komputera albo użyj przycisku skanowania."></textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="pasteTargetOfferButton" class="button" type="button">Wklej zaproszenie</button>
+              <button id="scanTargetOfferButton" class="button" type="button">Skanuj zaproszenie</button>
+              <button id="processTargetOfferButton" class="button button-primary" type="button">Przygotuj odbiór</button>
+            </div>
+
+            <p id="targetSyncStatus" class="security-note">Brak aktywnej sesji odbioru.</p>
+
+            <div id="targetSyncQr" class="sync-qr-output" aria-live="polite"></div>
+
+            <label class="field field-wide">
+              <span>Odpowiedź dla urządzenia wysyłającego</span>
+              <textarea id="targetSyncTokenOutput" readonly placeholder="Po przygotowaniu odbioru pojawi się tutaj odpowiedź do odesłania."></textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="copyTargetSyncButton" class="button" type="button">Kopiuj odpowiedź</button>
+              <button id="resetTargetSyncButton" class="button button-subtle" type="button">Wyczyść</button>
+            </div>
+
+            <div id="targetSyncProgressShell" class="sync-progress-shell is-hidden">
+              <div class="progress-track">
+                <div id="targetSyncProgressFill" class="progress-fill" style="width: 0%"></div>
+              </div>
+              <p id="targetSyncProgressText" class="security-note">Oczekiwanie na dane z urządzenia źródłowego.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <p id="recoveryStatusNote" class="security-note"></p>
+
+      <p class="security-note inline-help">
+        Dane są przechowywane lokalnie w postaci zaszyfrowanej przy użyciu Web Crypto (PBKDF2 + AES-GCM).
+        Logowanie odblokowuje lokalny magazyn danych. Po kliknięciu synchronizacji aplikacja zapisuje w Supabase wyłącznie zaszyfrowany vault.
+      </p>
+    </section>
+
+    <section id="dashboardSection" class="panel app-lockable tab-panel" data-tab-panel="dashboard">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Panel dnia</p>
+          <div class="dashboard-title-row">
+            <h2>Panel Główny</h2>
+            <div class="cloud-sync-control" aria-live="polite">
+              <span id="cloudSyncStatus" class="cloud-sync-status">Nie synchronizowano</span>
+              <button id="cloudSyncButton" class="button button-primary" type="button">Synchronizuj</button>
+            </div>
+          </div>
+        </div>
+        <span id="dashboardStatus" class="status-pill status-locked">Oczekuje</span>
+      </div>
+
+      <p class="security-note section-intro">
+        Tutaj od razu widzisz, co jest najważniejsze na dziś: dzienny wpis, plan treningu, bilans dnia i konkretne decyzje, które pomogą domknąć cel bez zgadywania.
+      </p>
+
+      <div class="planner-block dashboard-habits-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">System nawyków</p>
+            <h3>Dzisiejsza checklista</h3>
+          </div>
+          <button id="toggleHabitEditorButton" class="button button-subtle" type="button">Edytuj</button>
+        </div>
+        <div id="dashboardHabitList" class="habit-checklist" aria-live="polite"></div>
+        <form id="habitEditorForm" class="habit-editor is-hidden" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              <span>Nazwa checkboxa</span>
+              <input id="habitNameInput" type="text" maxlength="80" placeholder="np. Pull day, pływanie, przeczytać 30 stron">
+            </label>
+            <label class="field">
+              <span>Kolor boxa</span>
+              <select id="habitColorInput">
+                <option value="ruby">Rubinowy czerwony</option>
+                <option value="emerald">Zielony</option>
+                <option value="blue">Niebieski</option>
+                <option value="violet">Fioletowy</option>
+                <option value="amber">Bursztynowy</option>
+                <option value="cyan">Turkusowy</option>
+                <option value="rose">Różowy</option>
+                <option value="steel">Stalowy</option>
+              </select>
+            </label>
+            <div class="field field-wide">
+              <span>Dni tygodnia</span>
+              <div id="habitWeekdayPicker" class="weekday-picker" aria-label="Dni tygodnia dla nawyku"></div>
+              <p class="field-hint">Zaznacz dni, w które ten punkt ma się pojawiać w Panelu Głównym.</p>
+            </div>
+          </div>
+          <div class="action-row">
+            <button id="saveHabitButton" class="button button-primary" type="submit">Dodaj checkbox</button>
+            <button id="cancelHabitEditButton" class="button button-subtle" type="button">Zamknij edycję</button>
+          </div>
+          <div id="habitManagementList" class="habit-management-list" aria-live="polite"></div>
+        </form>
+        <div class="monthly-habit-panel" aria-live="polite">
+          <div class="subpanel-heading monthly-habit-heading">
+            <div>
+              <p class="eyebrow">Tracker miesiąca</p>
+              <h3 id="dashboardMonthTrackerTitle">Postępy miesiąca</h3>
+            </div>
+            <span id="dashboardMonthTrackerStatus" class="status-pill status-progress">Miesiąc</span>
+          </div>
+          <p id="dashboardMonthTrackerSummary" class="security-note month-tracker-summary"></p>
+          <div class="month-tracker-legend" aria-hidden="true">
+            <span><i class="month-tracker-check month-tracker-check-done">✓</i> wykonane</span>
+            <span><i class="month-tracker-check month-tracker-check-missed"></i> brak</span>
+            <span><i class="month-tracker-check month-tracker-check-future"></i> czeka</span>
+          </div>
+          <div id="dashboardMonthTrackerBody" class="month-tracker-grid"></div>
+        </div>
+      </div>
+
+      <div class="planner-block">
+        <h3>Analiza dnia AI</h3>
+        <div id="dashboardOverviewCards" class="metric-grid" aria-live="polite"></div>
+      </div>
+
+      <div class="action-row quick-link-row">
+        <button id="dashboardGoTraining" class="button" type="button">Przejdź do treningu</button>
+        <button id="dashboardGoJournal" class="button" type="button">Przejdź do dziennika</button>
+        <button id="dashboardGoCalculator" class="button" type="button">Przejdź do kalkulatora</button>
+      </div>
+
+      <div class="insights-layout dashboard-layout">
+        <div class="planner-block">
+          <h3>Dzisiejszy trening</h3>
+          <div id="dashboardTrainingCards" class="metric-grid dashboard-compact-grid" aria-live="polite"></div>
+        </div>
+
+        <div class="planner-block">
+          <h3>Dzisiejszy dziennik</h3>
+          <div id="dashboardJournalCards" class="metric-grid dashboard-compact-grid" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="planner-block">
+        <h3>Co zrobić dziś</h3>
+        <ul id="dashboardCoachList" class="insights-list plan-list"></ul>
+      </div>
+    </section>
+
+    <section id="onboardingSection" class="panel onboarding-panel tab-panel" data-tab-panel="onboarding">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Szybki start</p>
+          <h2>Onboarding</h2>
+        </div>
+        <span id="onboardingStatus" class="status-pill status-progress">Start</span>
+      </div>
+
+      <p id="onboardingSummary" class="security-note section-intro">
+        Ta sekcja prowadzi krok po kroku przez pierwsze uruchomienie i tłumaczy pojęcia, które najczęściej budzą pytania.
+      </p>
+
+      <div id="onboardingCards" class="metric-grid" aria-live="polite"></div>
+
+      <div class="action-row quick-link-row">
+        <button id="onboardingGoLogin" class="button" type="button">1. Logowanie</button>
+        <button id="onboardingGoProfile" class="button" type="button">2. Profil i cel</button>
+        <button id="onboardingGoEntry" class="button" type="button">3. Dzienny wpis</button>
+        <button id="onboardingGoWorkout" class="button" type="button">4. Trening</button>
+      </div>
+
+      <div class="insights-layout onboarding-layout">
+        <div class="planner-block">
+          <h3>Co zrobić po kolei</h3>
+          <ul id="onboardingList" class="insights-list plan-list"></ul>
+        </div>
+
+        <div class="planner-block">
+          <h3>Jak czytać pola</h3>
+          <div class="glossary-grid">
+            <article class="glossary-item">
+              <strong>RPE</strong>
+              <p>Skala odczucia trudności serii. `7` oznacza zapas kilku powtórzeń, `8.5` około 1-2 w zapasie, `10` pełne maksimum.</p>
+            </article>
+            <article class="glossary-item">
+              <strong>Treningi / tydzień</strong>
+              <p>Liczymy dni aktywnego treningu, a nie liczbę ćwiczeń. Jedna sesja z pięcioma ćwiczeniami to nadal `1` trening.</p>
+            </article>
+            <article class="glossary-item">
+              <strong>Profil aktywności</strong>
+              <p>Określa typ wysiłku. Dla siłowni wybierz `Siłowe / oporowe`, a dla biegania, marszu czy roweru odpowiedni profil cardio.</p>
+            </article>
+            <article class="glossary-item">
+              <strong>Deload</strong>
+              <p>Lżejszy tydzień, w którym świadomie obcinasz zmęczenie. Mniej serii i niższe tempo progresji pomagają wrócić świeżo.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="avatarSection" class="panel app-lockable tab-panel" data-tab-panel="avatar">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Avatar Goal</p>
+          <h2>Sklep kosmetyczny i tozsamosc</h2>
+        </div>
+        <span id="avatarStatus" class="status-pill status-locked">Tryb startowy</span>
+      </div>
+
+      <p class="security-note section-intro">
+        To jest baza pod motywacyjnego Avatara w klimacie autorskiej fantazji sztuk walki. Możesz ustawić jego pseudonim, zmieniać aktywną rasę i przygotować grunt pod dalszą personalizację.
+      </p>
+
+      <div class="avatar-hub">
+        <aside class="avatar-preview-card">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Podgląd na żywo</p>
+              <h3 id="avatarPreviewName">Ruby Focus</h3>
+            </div>
+          </div>
+
+          <div id="avatarPreviewStage" class="avatar-preview-stage avatar-art-stage" data-avatar-species-current="panda" data-avatar-mood-current="calm" data-avatar-effect-current="ruby_aura" aria-hidden="true">
+            <div class="avatar-rig">
+              <span class="avatar-effect-layer" aria-hidden="true"></span>
+              <span class="avatar-stage-shadow" aria-hidden="true"></span>
+              <img
+                id="avatarPreviewImage"
+                class="avatar-art avatar-art-panel avatar-art-image"
+                src="assets/avatars/panda-calm.png"
+                alt="Avatar Panda w trybie lagodnym"
+                loading="eager"
+                decoding="async"
+              >
+            </div>
+          </div>
+
+          <div class="metric-grid avatar-preview-metrics">
+            <article class="metric-card">
+              <span class="metric-label">Rasa aktywna</span>
+              <p id="avatarPreviewRace" class="metric-value">Panda</p>
+              <p class="metric-support">Aktywna rasa Avatara. Wszystkie obecne warianty są od razu gotowe do wyboru i zapisu.</p>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Styl aktywny</span>
+              <p id="avatarPreviewLoadout" class="metric-value">Lagodny / Rubin</p>
+              <p class="metric-support">To połączenie aktualnego nastroju i aktywnego efektu, który pojawia się za Avatarem.</p>
+            </article>
+          </div>
+        </aside>
+
+        <div class="avatar-store-shell">
+          <div id="avatarStoreNav" class="avatar-store-nav" role="tablist" aria-label="Zakladki personalizacji Avatara">
+            <button class="avatar-store-tab is-active" type="button" data-avatar-tab-button="identity">Pseudonim</button>
+            <button class="avatar-store-tab" type="button" data-avatar-tab-button="species">Rasy</button>
+            <button class="avatar-store-tab" type="button" data-avatar-tab-button="outfits">Nastroj</button>
+            <button class="avatar-store-tab" type="button" data-avatar-tab-button="effects">Efekty</button>
+          </div>
+
+          <div class="avatar-store-panels">
+            <section class="avatar-store-panel" data-avatar-tab-panel="identity">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Tozsamosc</p>
+                  <h3>Zmiana pseudonimu</h3>
+                </div>
+              </div>
+
+              <form id="avatarIdentityForm" class="form-grid" novalidate>
+                <label class="field field-wide">
+                  <span>Pseudonim Avatara</span>
+                  <input id="avatarNicknameInput" type="text" maxlength="32" autocomplete="off" placeholder="Np. Ruby Focus">
+                  <p class="field-hint">To nazwa, która będzie pojawiala się przy Avatarze obok BeTheOne oraz w panelu Avatara.</p>
+                </label>
+
+                <div class="action-row">
+                  <button id="saveAvatarIdentityButton" class="button button-primary" type="submit">Zapisz pseudonim</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="avatar-store-panel is-hidden" data-avatar-tab-panel="species">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Rasy</p>
+                  <h3>Zmiana rasy Avatara</h3>
+                </div>
+              </div>
+
+              <div class="avatar-option-grid">
+                <article class="avatar-option-card avatar-option-card-active" data-avatar-species-card="panda">
+                  <div class="avatar-option-head">
+                    <strong>Panda</strong>
+                    <span class="avatar-chip avatar-chip-active" data-avatar-species-chip="panda">Aktywna</span>
+                  </div>
+                  <p>Panda występuje w wersji lagodnej i drapieznej. W obu wariantach zachowuje lekki, motywacyjny idle animation.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-species="panda">Wybierz Pande</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-species-card="tiger">
+                  <div class="avatar-option-head">
+                    <strong>Tygrys</strong>
+                    <span class="avatar-chip" data-avatar-species-chip="tiger">Dostępna</span>
+                  </div>
+                  <p>Tygrys ma dwa oblicza: spokojne i drapieżne. Dobrze pasuje do ofensywnego klimatu progresu i rywalizacji.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-species="tiger">Wybierz Tygrysa</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-species-card="wolf">
+                  <div class="avatar-option-head">
+                    <strong>Wilk</strong>
+                    <span class="avatar-chip" data-avatar-species-chip="wolf">Dostępna</span>
+                  </div>
+                  <p>Wilk utrzymuje klimat cichej dyscypliny, ale możesz przełączyć go z łagodnego kompana na bardziej drapieżnego łowcę.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-species="wolf">Wybierz Wilka</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-species-card="dragon">
+                  <div class="avatar-option-head">
+                    <strong>Smok</strong>
+                    <span class="avatar-chip" data-avatar-species-chip="dragon">Dostępna</span>
+                  </div>
+                  <p>Mistyczny mistrz z bardziej premium sylwetka i fantastycznym vibem, ale nadal spójny z rubinowo-czarnym motywem.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-species="dragon">Wybierz Smoka</button>
+                </article>
+              </div>
+            </section>
+
+            <section class="avatar-store-panel is-hidden" data-avatar-tab-panel="outfits">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Nastroj</p>
+                  <h3>Lagodny albo drapieżny</h3>
+                </div>
+              </div>
+
+              <div class="avatar-option-grid">
+                <article class="avatar-option-card avatar-option-card-active" data-avatar-mood-card="calm">
+                  <div class="avatar-option-head">
+                    <strong>Lagodny</strong>
+                    <span class="avatar-chip avatar-chip-active" data-avatar-mood-chip="calm">Aktywny</span>
+                  </div>
+                  <p>Bardziej przyjazna, pogodna wersja Avatara. Dobrze pasuje do codziennego progresu i spokojnej motywacji.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-mood="calm">Wybierz łagodny</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-mood-card="feral">
+                  <div class="avatar-option-head">
+                    <strong>Drapiezny</strong>
+                    <span class="avatar-chip" data-avatar-mood-chip="feral">Dostępny</span>
+                  </div>
+                  <p>Bardziej agresywny i skoncentrowany wyglad. Idealny, kiedy chcesz żeby Avatar mocniej podkreslal tryb walki o wynik.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-mood="feral">Wybierz drapieżny</button>
+                </article>
+              </div>
+            </section>
+
+            <section class="avatar-store-panel is-hidden" data-avatar-tab-panel="effects">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Efekty</p>
+                  <h3>Aury i trailery</h3>
+                </div>
+              </div>
+
+              <div class="avatar-option-grid">
+                <article class="avatar-option-card avatar-option-card-active" data-avatar-effect-card="ruby_aura">
+                  <div class="avatar-option-head">
+                    <strong>Rubinowa aura</strong>
+                    <span class="avatar-chip avatar-chip-active" data-avatar-effect-chip="ruby_aura">Aktywny</span>
+                  </div>
+                  <p>Subtelna, pulsujaca aura w tonie głównego motywu aplikacji. Dobrze wspiera klimat czerni i rubinowej czerwieni.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="ruby_aura">Wybierz rubin</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-effect-card="fire_aura">
+                  <div class="avatar-option-head">
+                    <strong>Ogień</strong>
+                    <span class="avatar-chip" data-avatar-effect-chip="fire_aura">Dostępny</span>
+                  </div>
+                  <p>Rozgrzane smugi i plomienny ogon za sylwetka. Najbardziej agresywny z całej szostki.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="fire_aura">Wybierz ogień</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-effect-card="water_flow">
+                  <div class="avatar-option-head">
+                    <strong>Woda</strong>
+                    <span class="avatar-chip" data-avatar-effect-chip="water_flow">Dostępny</span>
+                  </div>
+                  <p>Falujaca poświata z lekkimi smugami i chlodnym trail em. Daje spokojniejszy, plynny vibe.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="water_flow">Wybierz wodę</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-effect-card="emerald_field">
+                  <div class="avatar-option-head">
+                    <strong>Emeraldowy</strong>
+                    <span class="avatar-chip" data-avatar-effect-chip="emerald_field">Dostępny</span>
+                  </div>
+                  <p>Szmaragdowa mgła z iskrzącym polem energii. Pasuje szczególnie dobrze do Smoka i Wilka.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="emerald_field">Wybierz emerald</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-effect-card="shadow_veil">
+                  <div class="avatar-option-head">
+                    <strong>Shadow</strong>
+                    <span class="avatar-chip" data-avatar-effect-chip="shadow_veil">Dostępny</span>
+                  </div>
+                  <p>Ciemna zaslona z lekka, dymna smugą. Najbardziej mroczny i cichy wariant z całej kolekcji.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="shadow_veil">Wybierz shadow</button>
+                </article>
+                <article class="avatar-option-card" data-avatar-effect-card="firework_burst">
+                  <div class="avatar-option-head">
+                    <strong>Firework</strong>
+                    <span class="avatar-chip" data-avatar-effect-chip="firework_burst">Dostępny</span>
+                  </div>
+                  <p>Kolorowe rozbłyski i celebracyjne punkty swiatla za plecami Avatara. Najbardziej eventowy styl.</p>
+                  <button class="button avatar-select-button" type="button" data-avatar-effect="firework_burst">Wybierz firework</button>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="leagueSection" class="panel app-lockable tab-panel" data-tab-panel="league">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Rywalizacja znajomych</p>
+          <h2>Liga BeTheOne</h2>
+        </div>
+        <span id="leagueStatusBadge" class="status-pill status-locked">Rozłączona</span>
+      </div>
+
+      <p class="panel-support">
+        Do Supabase trafiają wyłącznie pseudonim, wygląd avatara, zagregowane wyniki tygodnia i rekordy osobiste. Dziennik, masa ciała, zdjęcia i notatki pozostają w zaszyfrowanym magazynie urządzenia.
+      </p>
+
+      <div class="league-setup-grid">
+        <article class="league-card">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Tożsamość</p>
+              <h3>Profil zawodnika</h3>
+            </div>
+            <span id="leagueIdentityStatus" class="status-pill status-locked">Nieaktywny</span>
+          </div>
+          <form id="leagueProfileForm" class="form-grid" novalidate>
+            <label class="field field-wide">
+              <span>Pseudonim w rankingu</span>
+              <input id="leagueDisplayNameInput" type="text" minlength="2" maxlength="32" autocomplete="off" placeholder="Np. Ruby Focus">
+              <p class="field-hint">Avatar zostanie pobrany automatycznie z zakładki Avatar. Nie publikujemy danych zdrowotnych ani pełnej historii treningów.</p>
+            </label>
+            <div class="action-row field-wide">
+              <button id="saveLeagueProfileButton" class="button" type="submit">Zapisz profil ligi</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="league-card">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Nowa grupa</p>
+              <h3>Utwórz ligę</h3>
+            </div>
+          </div>
+          <form id="leagueCreateForm" class="form-grid" novalidate>
+            <label class="field field-wide">
+              <span>Nazwa ligi</span>
+              <input id="leagueNameInput" type="text" minlength="3" maxlength="60" autocomplete="off" placeholder="Np. Ekipa Żelaznego Tygodnia">
+            </label>
+            <div class="action-row field-wide">
+              <button id="createLeagueButton" class="button" type="submit">Utwórz ligę i kod</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="league-card">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Wspólne zaproszenie</p>
+              <h3>Dołącz do ligi</h3>
+            </div>
+          </div>
+          <form id="leagueJoinForm" class="form-grid" novalidate>
+            <label class="field field-wide">
+              <span>Link lub kod zaproszenia</span>
+              <textarea id="leagueInviteInput" rows="3" autocomplete="off" placeholder="Wklej link albo kod otrzymany od właściciela ligi"></textarea>
+            </label>
+            <div class="action-row field-wide">
+              <button id="pasteLeagueInviteButton" class="button button-subtle" type="button">Wklej kod</button>
+              <button id="joinLeagueButton" class="button" type="submit">Dołącz do ligi</button>
+            </div>
+          </form>
+        </article>
+      </div>
+
+      <article id="leagueWorkspace" class="league-workspace is-hidden">
+        <div class="league-toolbar">
+          <label class="field">
+            <span>Aktywna liga</span>
+            <select id="leagueSelect"></select>
+          </label>
+          <div class="action-row league-toolbar-actions">
+            <button id="refreshLeagueButton" class="button button-subtle" type="button">Odśwież ranking</button>
+            <button id="syncLeagueButton" class="button" type="button">Opublikuj aktualne wyniki</button>
+          </div>
+        </div>
+
+        <div class="subpanel-heading league-current-heading">
+          <div>
+            <p class="eyebrow">Aktywny sezon tygodniowy</p>
+            <h3 id="leagueCurrentName">Liga</h3>
+            <p id="leagueCurrentMeta" class="panel-support">Wybierz ligę, aby zobaczyć ranking.</p>
+          </div>
+          <span id="leagueLastSync" class="status-pill status-locked">Brak synchronizacji</span>
+        </div>
+
+        <div id="leagueSummaryCards" class="metric-grid league-summary-grid"></div>
+
+        <section id="leaguePrEventsPanel" class="league-block">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Konkurencje lidera</p>
+              <h3>Ranking PR według ćwiczeń</h3>
+            </div>
+            <span id="leaguePrEventsBadge" class="status-pill status-locked">Konfiguracja ligi</span>
+          </div>
+
+          <p id="leaguePrEventsStatus" class="security-note">
+            Lider ligi wybiera ćwiczenia i typ miary, a aplikacja układa TOP ranking zgodnie z wpisami uczestników.
+          </p>
+
+          <form id="leaguePrEventForm" class="form-grid league-pr-event-form is-hidden" novalidate>
+            <label class="field">
+              <span>Nazwa w rankingu</span>
+              <input id="leaguePrEventNameInput" type="text" maxlength="80" autocomplete="off" placeholder="np. Wyciskanie na lawce">
+            </label>
+            <label class="field">
+              <span>Fraza dopasowania</span>
+              <input id="leaguePrEventMatchInput" type="text" maxlength="80" autocomplete="off" placeholder="np. lawka, bieg, pływanie">
+              <p class="field-hint">Użyj słowa, które występuje w nazwie ćwiczenia w dzienniku uczestników.</p>
+            </label>
+            <label class="field">
+              <span>Miara PR</span>
+              <select id="leaguePrEventMetricInput">
+                <option value="strength_max">Największy ciężar (kg)</option>
+                <option value="reps_max">Najwięcej powtórzeń</option>
+                <option value="timed_distance">Najszybszy czas na dystans</option>
+                <option value="distance_max">Najdłuższy dystans</option>
+                <option value="duration_max">Najdłuższy czas</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Dystans celu (km)</span>
+              <input id="leaguePrEventDistanceInput" type="number" min="0.1" max="300" step="0.1" placeholder="np. 3">
+              <p class="field-hint">Wymagane dla biegu, pływania lub roweru na konkretny dystans.</p>
+            </label>
+            <div class="action-row field-wide">
+              <button id="saveLeaguePrEventButton" class="button button-primary" type="submit">Dodaj konkurencje</button>
+            </div>
+          </form>
+
+          <div class="table-wrap">
+            <table class="entries-table league-table league-pr-events-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Konkurencja</th>
+                  <th>Miara</th>
+                  <th>Dopasowanie</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="leaguePrEventsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="league-block">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Top PR</p>
+              <h3>Ranking wybranych konkurencji</h3>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="entries-table league-table league-pr-ranking-table">
+              <thead>
+                <tr>
+                  <th>Hierarchia</th>
+                  <th>Konkurencja</th>
+                  <th>Top</th>
+                  <th>Zawodnik</th>
+                  <th>Wynik</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody id="leaguePrRankingBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="leagueInvitePanel" class="league-invite-panel is-hidden">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Jeden kod dla całej ekipy</p>
+              <h3>Zaproszenie właściciela</h3>
+            </div>
+          </div>
+          <div class="league-invite-layout">
+            <div id="leagueInviteQr" class="sync-qr-output" aria-live="polite"></div>
+            <div class="league-invite-copy">
+              <label class="field">
+                <span>Link lub kod ligi</span>
+                <textarea id="leagueInviteOutput" rows="4" readonly placeholder="Wygeneruj kod zaproszenia"></textarea>
+              </label>
+              <div class="action-row">
+                <button id="copyLeagueInviteButton" class="button" type="button">Kopiuj zaproszenie</button>
+                <button id="rotateLeagueInviteButton" class="button button-subtle" type="button">Wygeneruj nowy kod</button>
+              </div>
+              <p class="security-note">Nowy kod natychmiast unieważnia poprzedni. Ten sam aktywny kod może zeskanować cała grupa.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="league-block">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Bieżący tydzień</p>
+              <h3>Ranking ligi</h3>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="entries-table league-table">
+              <thead>
+                <tr>
+                  <th>Miejsce</th>
+                  <th>Zawodnik</th>
+                  <th>Punkty</th>
+                  <th>Treningi</th>
+                  <th>Aktywne dni</th>
+                  <th>Streak</th>
+                  <th>Czas</th>
+                  <th>PR-y</th>
+                </tr>
+              </thead>
+              <tbody id="leagueLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="league-detail-grid">
+          <section class="league-block">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">Ostatnie osiągnięcia</p>
+                <h3>Rekordy osobiste</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="entries-table league-table league-pr-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Zawodnik</th>
+                    <th>Ćwiczenie</th>
+                    <th>Wynik</th>
+                  </tr>
+                </thead>
+                <tbody id="leaguePrBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="league-block">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">Ekipa</p>
+                <h3>Uczestnicy</h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="entries-table league-table league-members-table">
+                <thead>
+                  <tr>
+                    <th>Zawodnik</th>
+                    <th>Rola</th>
+                    <th>Dołączył</th>
+                    <th>Akcje</th>
+                  </tr>
+                </thead>
+                <tbody id="leagueMembersBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="action-row league-danger-actions">
+          <button id="leaveLeagueButton" class="button button-subtle" type="button">Opuść ligę</button>
+          <button id="deleteLeagueButton" class="button button-danger is-hidden" type="button">Usuń ligę</button>
+        </div>
+      </article>
+    </section>
+
+    <section id="calculatorSection" class="panel app-lockable tab-panel" data-tab-panel="calculator">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Przeliczniki</p>
+          <h2>Kalkulator</h2>
+        </div>
+        <span id="calculatorStatus" class="status-pill status-locked">Autofill</span>
+      </div>
+
+      <p class="security-note section-intro">
+        Kalkulator pobiera najświeższe możliwe dane z profilu i dziennika, a potem pozwala je od razu przeliczyć lub ręcznie skorygować.
+      </p>
+
+      <form id="calculatorForm" class="form-grid" novalidate>
+        <label class="field">
+          <span>Masa ciała (kg)</span>
+          <input id="calculatorWeightInput" type="number" min="25" max="400" step="0.1" placeholder="82.4">
+        </label>
+
+        <label class="field">
+          <span>Wzrost (cm)</span>
+          <input id="calculatorHeightInput" type="number" min="120" max="250" step="1" placeholder="178">
+        </label>
+
+        <label class="field">
+          <span>Wiek</span>
+          <input id="calculatorAgeInput" type="number" min="14" max="100" step="1" placeholder="30">
+        </label>
+
+        <label class="field">
+          <span>Płeć biologiczna</span>
+          <select id="calculatorSexInput">
+            <option value="unknown">Nieokreślona / średnia</option>
+            <option value="male">Mężczyzna</option>
+            <option value="female">Kobieta</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Pas (cm)</span>
+          <input id="calculatorWaistInput" type="number" min="40" max="200" step="0.1" placeholder="84.5">
+        </label>
+
+        <label class="field">
+          <span>Szyja (cm, opcjonalnie)</span>
+          <input id="calculatorNeckInput" type="number" min="20" max="80" step="0.1" placeholder="39.0">
+        </label>
+
+        <label class="field">
+          <span>Biodra (cm, opcjonalnie)</span>
+          <input id="calculatorHipsInput" type="number" min="50" max="220" step="0.1" placeholder="98.0">
+        </label>
+
+        <label class="field">
+          <span>Kroki dzisiaj</span>
+          <input id="calculatorStepsInput" type="number" min="0" max="50000" step="100" placeholder="9600">
+        </label>
+
+        <label class="field">
+          <span>Treningi / tydzień</span>
+          <input id="calculatorWeeklySessionsInput" type="number" min="0" max="14" step="1" placeholder="4">
+        </label>
+
+        <label class="field">
+          <span>Aktywność bazowa</span>
+          <select id="calculatorActivityInput">
+            <option value="1.2">Siedząca (1.2)</option>
+            <option value="1.35">Lekka (1.35)</option>
+            <option value="1.5">Umiarkowana (1.5)</option>
+            <option value="1.65">Aktywna (1.65)</option>
+            <option value="1.8">Bardzo aktywna (1.8)</option>
+            <option value="1.95">Sportowa (1.95)</option>
+          </select>
+        </label>
+
+        <div class="action-row field-wide">
+          <button id="calculatorAutofillButton" class="button" type="button">Pobierz z dziennika</button>
+          <button id="calculatorComputeButton" class="button button-primary" type="submit">Przelicz</button>
+          <button id="calculatorResetButton" class="button button-subtle" type="button">Reset do autofillu</button>
+        </div>
+      </form>
+
+      <div id="calculatorResultCards" class="metric-grid" aria-live="polite"></div>
+
+      <div class="planner-block">
+        <h3>Odczyt kalkulatorów</h3>
+        <ul id="calculatorResultList" class="insights-list plan-list"></ul>
+      </div>
+    </section>
+
+    <section id="settingsSection" class="panel settings-panel app-lockable tab-panel" data-tab-panel="profile">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Profil i cel</p>
+          <h2>Parametry użytkownika</h2>
+        </div>
+      </div>
+
+      <p class="security-note section-intro">
+        Na start wystarczą: aktualna masa, wzrost i liczba treningów w tygodniu. Resztę możesz uzupełnić później bez psucia wcześniejszych danych.
+      </p>
+
+      <form id="settingsForm" class="form-grid" novalidate>
+        <label class="field">
+          <span>Główny cel</span>
+          <select id="goalInput" name="goal">
+            <option value="fat_loss">Redukcja tkanki tłuszczowej</option>
+            <option value="muscle_gain">Budowa masy i siły</option>
+            <option value="performance">Wzrost wydolności / siły</option>
+          </select>
+          <p class="field-hint">Cel zmienia interpretację trendów, rekomendacje kalorii i priorytety planu działania.</p>
+        </label>
+
+        <label class="field">
+          <span>Tryb priorytetu</span>
+          <select id="priorityModeInput" name="priorityMode">
+            <option value="cut">Redukcja</option>
+            <option value="mass">Masa</option>
+            <option value="strength">Siła</option>
+            <option value="conditioning">Kondycja</option>
+            <option value="health">Zdrowie</option>
+          </select>
+          <p class="field-hint">Tryb steruje makro, cardio, tempem progresji, alertami oraz domyślnym zachowaniem trenera AI.</p>
+        </label>
+
+        <label class="field">
+          <span>Docelowe treningi / tydzień</span>
+          <input id="weeklyTargetInput" type="number" min="1" max="14" step="1" value="4">
+          <p class="field-hint">Wpisz liczbę dni treningowych w tygodniu. Nie liczymy liczby ćwiczeń ani pojedynczych serii.</p>
+        </label>
+
+        <label class="field">
+          <span>Aktualna masa ciała (kg)</span>
+          <input id="currentWeightInput" type="number" min="25" max="400" step="0.1" placeholder="np. 82.4">
+          <p class="field-hint">To punkt startowy dla BMR, BMI, prognoz i części rekomendacji jeszcze zanim zapiszesz pierwszy dzienny wpis.</p>
+        </label>
+
+        <label class="field">
+          <span>Wzrost (cm)</span>
+          <input id="heightInput" type="number" min="120" max="250" step="1" placeholder="np. 178">
+          <p class="field-hint">Wzrost razem z masą pozwala lepiej liczyć BMI, szacowany poziom BF i kalorie z kroków.</p>
+        </label>
+
+        <label class="field">
+          <span>Wiek (opcjonalnie)</span>
+          <input id="ageInput" type="number" min="14" max="100" step="1" placeholder="np. 31">
+        </label>
+
+        <label class="field">
+          <span>Płeć biologiczna (opcjonalnie)</span>
+          <select id="sexInput" name="sex">
+            <option value="unknown" selected>Nie podano</option>
+            <option value="male">Mężczyzna</option>
+            <option value="female">Kobieta</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Cel masy ciała (kg)</span>
+          <input id="targetWeightInput" type="number" min="25" max="400" step="0.1" placeholder="np. 78.0">
+          <p class="field-hint">Jeśli wpiszesz cel masy, aplikacja zacznie liczyć ETA dojścia do celu na podstawie trendu i planu treningowego.</p>
+        </label>
+
+        <label class="field">
+          <span>Cel tkanki tłuszczowej (%)</span>
+          <input id="targetBodyFatInput" type="number" min="3" max="70" step="0.1" placeholder="np. 15.0">
+          <p class="field-hint">To pole jest opcjonalne, ale bardzo przydatne przy redukcji i rekompozycji, gdy sama masa nie pokazuje całego obrazu.</p>
+        </label>
+
+        <p class="security-note field-wide inline-help">
+          Jeśli nie wpiszesz poziomu tkanki tłuszczowej w dziennym wpisie, aplikacja oszacuje go z BMI
+          na podstawie wzrostu, masy ciała oraz opcjonalnie wieku i płci biologicznej.
+        </p>
+
+        <div class="action-row">
+          <button class="button button-primary" type="submit">Zapisz ustawienia</button>
+          <button id="demoDataButton" class="button button-subtle" type="button">Wygeneruj dane demo</button>
+        </div>
+      </form>
+
+      <div class="planner-block">
+        <div class="panel-heading compact-heading">
+          <div>
+            <p class="eyebrow">Cele poza masą</p>
+            <h3>Cele użytkownika</h3>
+          </div>
+          <span id="customGoalModeBadge" class="status-pill status-locked">Tryb dodawania</span>
+        </div>
+
+        <p class="security-note section-intro">
+          Dodaj konkretne cele typu: 10 podciągnięć, 100 kg w wyciskaniu, 5 km biegu, pas 85 cm, powrót po kontuzji albo utrzymanie formy. Aplikacja sama będzie szukać postępu w dzienniku, treningach i pomiarach.
+        </p>
+
+        <form id="customGoalForm" class="form-grid" novalidate>
+          <label class="field">
+            <span>Typ celu</span>
+            <select id="customGoalTypeInput" name="customGoalType">
+              <option value="strength_reps">Powtórzenia / masa ciała</option>
+              <option value="strength_weight">Ciężar w ćwiczeniu</option>
+              <option value="cardio_distance">Dystans / wydolność</option>
+              <option value="body_measurement">Obwód sylwetki</option>
+              <option value="rehab">Powrót po kontuzji</option>
+              <option value="maintenance">Utrzymanie formy</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Nazwa celu</span>
+            <input id="customGoalNameInput" type="text" maxlength="90" placeholder="np. Podciągnąć się 10 razy">
+          </label>
+
+          <label class="field">
+            <span>Ćwiczenie / metryka</span>
+            <input id="customGoalMetricInput" type="text" maxlength="80" list="exerciseSuggestions" placeholder="np. podciąganie, bieg, pas">
+            <p class="field-hint">Dla obwodów wpisz: pas, biodra, klatka, ramię albo udo. Dla treningu wpisz nazwę ćwiczenia lub aktywności.</p>
+          </label>
+
+          <label class="field">
+            <span>Wartość docelowa</span>
+            <input id="customGoalTargetInput" type="number" min="0" max="10000" step="0.1" placeholder="np. 10">
+          </label>
+
+          <label class="field">
+            <span>Jednostka</span>
+            <select id="customGoalUnitInput" name="customGoalUnit">
+              <option value="reps">powt.</option>
+              <option value="kg">kg</option>
+              <option value="km">km</option>
+              <option value="cm">cm</option>
+              <option value="sessions">sesje</option>
+              <option value="days">dni</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Punkt startowy (opcjonalnie)</span>
+            <input id="customGoalStartInput" type="number" min="0" max="10000" step="0.1" placeholder="np. 4">
+            <p class="field-hint">Jeśli zostawisz puste, aplikacja użyje pierwszego sensownego wyniku z historii albo zera.</p>
+          </label>
+
+          <label class="field">
+            <span>Termin (opcjonalnie)</span>
+            <input id="customGoalDueDateInput" type="date">
+          </label>
+
+          <label class="field">
+            <span>Tryb przygotowania</span>
+            <select id="customGoalPrepModeInput" name="customGoalPrepMode">
+              <option value="none">Bez specjalnego trybu</option>
+              <option value="vacation">8 tygodni do wakacji / formy</option>
+              <option value="competition">12 tygodni do zawodów</option>
+              <option value="test_5k">6 tygodni do testu 5 km</option>
+              <option value="deadline">Własny deadline celu</option>
+            </select>
+            <p class="field-hint">Po ustawieniu terminu aplikacja policzy tempo, ryzyko spóźnienia i zalecenia tygodniowe.</p>
+          </label>
+
+          <label class="field field-wide">
+            <span>Notatka celu</span>
+            <textarea id="customGoalNotesInput" maxlength="220" placeholder="Np. bez bólu barku, technika czysta, bez zajeżdżania regeneracji"></textarea>
+          </label>
+
+          <div class="action-row field-wide">
+            <button id="saveCustomGoalButton" class="button button-primary" type="submit">Dodaj cel</button>
+            <button id="resetCustomGoalButton" class="button button-subtle" type="button">Wyczyść pola</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table class="entries-table custom-goals-table">
+            <thead>
+              <tr>
+                <th>Cel</th>
+                <th>Typ</th>
+                <th>Postęp</th>
+                <th>Termin</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="customGoalBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="entrySection" class="panel app-lockable tab-panel" data-tab-panel="journal">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Rejestracja danych</p>
+          <h2 id="entryPanelTitle">Dodaj dzienny wpis</h2>
+        </div>
+        <span id="entryModeBadge" class="status-pill status-locked">Tryb dodawania</span>
+      </div>
+
+      <p class="security-note section-intro">
+        Minimalny sensowny wpis to masa, kalorie albo pełne `B/T/W`, kroki i sen. BF, tętno, obwody i zdjęcia progresu są opcjonalne, ale bardzo pomagają.
+      </p>
+
+      <form id="entryForm" class="form-grid" novalidate>
+        <label class="field">
+          <span>Data</span>
+          <input id="dateInput" type="date" required>
+        </label>
+
+        <label class="field">
+          <span>Masa ciała (kg)</span>
+          <input id="weightInput" type="number" min="25" max="400" step="0.1" placeholder="82.4">
+        </label>
+
+        <label class="field">
+          <span>Poziom tkanki tłuszczowej (%) opcjonalnie</span>
+          <input id="bodyFatInput" type="number" min="3" max="70" step="0.1" placeholder="18.5">
+          <p class="field-hint">Najlepiej wpisywać realny pomiar z urządzenia lub fałdomierza. Jeśli go nie masz, aplikacja spróbuje oszacować BF z BMI.</p>
+        </label>
+
+        <label class="field">
+          <span>Spożyte kalorie</span>
+          <input id="caloriesInput" type="number" min="0" max="12000" step="1" placeholder="2450">
+          <p class="field-hint">Wpisz sumę z całego dnia. Jeśli nie liczysz kalorii, postaraj się przynajmniej uzupełniać pełne `B/T/W`.</p>
+        </label>
+        <label class="field">
+          <span>Białko (g)</span>
+          <input id="proteinInput" type="number" min="0" max="400" step="1" placeholder="180">
+        </label>
+
+        <label class="field">
+          <span>Tłuszcze (g)</span>
+          <input id="fatInput" type="number" min="0" max="250" step="1" placeholder="75">
+        </label>
+
+        <label class="field">
+          <span>Węgle (g)</span>
+          <input id="carbsInput" type="number" min="0" max="1000" step="1" placeholder="260">
+        </label>
+
+        <div class="field-wide meal-builder planner-block">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Jedzenie</p>
+              <h3>Własne posiłki i szybkie dodawanie</h3>
+            </div>
+            <span id="entryMealSummary" class="status-pill status-locked">Brak posiłków</span>
+          </div>
+          <p class="security-note">
+            Zapisz swoje stałe posiłki, np. owsianka, kurczak z ryżem albo shake. Kalorie są wymagane, makro jest opcjonalne, ale jeśli je wpiszesz, aplikacja doliczy je do analizy regeneracji i bilansu.
+          </p>
+          <div class="form-grid meal-form-grid">
+            <label class="field">
+              <span>Zapisany posiłek</span>
+              <select id="savedMealSelect">
+                <option value="">Wybierz z zapisanych</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Nazwa posiłku</span>
+              <input id="mealNameInput" type="text" maxlength="80" placeholder="np. owsianka">
+            </label>
+            <label class="field">
+              <span>Kalorie / porcja</span>
+              <input id="mealCaloriesInput" type="number" min="1" max="5000" step="1" placeholder="520">
+            </label>
+            <label class="field">
+              <span>Porcje</span>
+              <input id="mealPortionsInput" type="number" min="0.1" max="10" step="0.1" value="1">
+            </label>
+            <label class="field">
+              <span>Białko / porcja (g)</span>
+              <input id="mealProteinInput" type="number" min="0" max="250" step="1" placeholder="35">
+            </label>
+            <label class="field">
+              <span>Tłuszcze / porcja (g)</span>
+              <input id="mealFatInput" type="number" min="0" max="200" step="1" placeholder="18">
+            </label>
+            <label class="field">
+              <span>Węgle / porcja (g)</span>
+              <input id="mealCarbsInput" type="number" min="0" max="400" step="1" placeholder="65">
+            </label>
+          </div>
+          <div class="action-row">
+            <button id="addMealToEntryButton" class="button button-primary" type="button">Dodaj posiłek do dnia</button>
+            <button id="saveMealTemplateButton" class="button button-subtle" type="button">Zapisz jako stały posiłek</button>
+            <button id="deleteSavedMealButton" class="button button-subtle" type="button">Usuń zapisany</button>
+            <button id="clearMealFormButton" class="button" type="button">Wyczyść posiłek</button>
+          </div>
+          <div class="table-wrap meal-table-wrap">
+            <table class="entries-table meal-table">
+              <thead>
+                <tr>
+                  <th>Posiłek</th>
+                  <th>Porcje</th>
+                  <th>Kcal</th>
+                  <th>Makro</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="entryMealsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Kroki</span>
+          <input id="stepsInput" type="number" min="0" max="50000" step="100" placeholder="9600">
+          <p class="field-hint">To liczba kroków z całego dnia, nie tylko z treningu. Ta wartość wpływa na wyliczenie spalonych kalorii.</p>
+        </label>
+
+        <label class="field">
+          <span>Sen (h)</span>
+          <input id="sleepInput" type="number" min="0" max="24" step="0.1" placeholder="7.3">
+        </label>
+
+        <label class="field">
+          <span>Tętno spoczynkowe</span>
+          <input id="restingHrInput" type="number" min="25" max="220" step="1" placeholder="58">
+          <p class="field-hint">Najlepiej wpisywać wartość rano po przebudzeniu albo z tej samej pory dnia, żeby trend był porównywalny.</p>
+        </label>
+
+        
+        <div class="field-wide form-section-heading">
+          <strong>Pomiary sylwetki i zdjęcia progresu</strong>
+          <p>Nie musisz wpisywać ich codziennie. Raz na 7-14 dni, najlepiej w tych samych warunkach, daje już bardzo praktyczny obraz zmian.</p>
+        </div>
+
+        <label class="field">
+          <span>Pas (cm)</span>
+          <input id="waistInput" type="number" min="40" max="200" step="0.1" placeholder="np. 84.5">
+        </label>
+
+        <label class="field">
+          <span>Biodra (cm)</span>
+          <input id="hipsInput" type="number" min="50" max="220" step="0.1" placeholder="np. 98.0">
+        </label>
+
+        <label class="field">
+          <span>Klatka (cm)</span>
+          <input id="chestInput" type="number" min="50" max="220" step="0.1" placeholder="np. 106.0">
+        </label>
+
+        <label class="field">
+          <span>Ramię (cm)</span>
+          <input id="armInput" type="number" min="15" max="80" step="0.1" placeholder="np. 38.5">
+        </label>
+
+        <label class="field">
+          <span>Udo (cm)</span>
+          <input id="thighInput" type="number" min="25" max="120" step="0.1" placeholder="np. 60.0">
+        </label>
+
+        <label class="field field-wide">
+          <span>Zdjęcia progresu (lokalnie, max 3)</span>
+          <input id="entryPhotoInput" type="file" accept="image/*" multiple>
+        </label>
+
+        <div id="entryPhotoPreview" class="photo-draft-grid field-wide" aria-live="polite"></div>
+
+        <div class="action-row field-wide">
+          <button id="clearEntryPhotosButton" class="button button-subtle" type="button">Wyczyść zdjęcia</button>
+        </div>
+
+        <p class="security-note field-wide inline-help">
+          Zdjęcia są kompresowane lokalnie w przeglądarce i zapisywane wyłącznie w zaszyfrowanym magazynie aplikacji. Nie są nigdzie wysyłane.
+        </p><label class="field field-wide">
+          <span>Notatka</span>
+          <textarea id="notesInput" rows="3" maxlength="180" placeholder="Np. ciężki trening nóg, niski sen, wysoki stres"></textarea>
+        </label>
+
+        <p class="security-note field-wide inline-help">
+          Spalone kalorie są liczone automatycznie na podstawie profilu, kroków i zapisanych ćwiczeń z danego dnia. Jeśli podasz komplet makro, aplikacja wykorzysta też ich kaloryczność do lepszej oceny bilansu i regeneracji.
+        </p>
+
+        <div class="action-row">
+          <button id="entrySubmitButton" class="button button-primary" type="submit">Dodaj wpis</button>
+          <button id="cancelEditButton" class="button" type="button">Anuluj edycję</button>
+          <button id="resetFormButton" class="button button-subtle" type="button">Wyczyść formularz</button>
+          <button id="exportCsvButton" class="button button-subtle" type="button">Eksport CSV</button>
+          <button id="importEntriesCsvButton" class="button button-subtle" type="button">Import CSV</button>
+        </div>
+      </form>
+
+      <input id="importEntriesCsvInput" type="file" accept=".csv,text/csv" hidden>
+    </section>
+
+    <section id="workoutSection" class="panel app-lockable tab-panel" data-tab-panel="training">
+      <p class="security-note section-intro">
+        Wybierz szablon, wpisz realne serie albo dodaj pojedynczą aktywność bez planu. Całość ma dać się ogarnąć w trakcie treningu, bez przewijania całej aplikacji.
+      </p>
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Treningi</p>
+          <h2>Szybki trening</h2>
+        </div>
+        <p class="panel-support">Szablon na górze, wpis standalone niżej, historia dnia na końcu.</p>
+      </div>
+
+      <div class="planner-block">
+        <h3>Szablony treningów</h3>
+
+        <input id="templateNameInput" type="hidden">
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Zapisany szablon</span>
+            <select id="templateSelect">
+              <option value="">Brak zapisanych szablonów</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Data wykonania</span>
+            <input id="templateExecutionDateInput" type="date">
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button id="createBlankTemplateButton" class="button button-primary" type="button">Utwórz własny szablon</button>
+          <button id="saveTemplateButton" class="button" type="button">Zapisz dzień jako szablon</button>
+          <button id="applyTemplateButton" class="button button-primary is-hidden" type="button">Wczytaj szablon do dnia</button>
+          <button id="previewTemplateButton" class="button button-subtle is-hidden" type="button">Podgląd szablonu</button>
+          <button id="editTemplateButton" class="button button-subtle" type="button">Edytuj szablon</button>
+          <button id="deleteTemplateButton" class="button button-subtle" type="button">Usuń szablon</button>
+        </div>
+
+        <div id="templateExecutionBlock" class="template-execution-block is-hidden">
+          <div class="subpanel-heading">
+            <div>
+              <p class="eyebrow">Wykonanie dzisiejsze</p>
+              <h3 id="templateExecutionTitle">Wybierz szablon, aby rozpisać serie</h3>
+            </div>
+            <span id="templateExecutionStatus" class="status-pill status-locked">Brak szablonu</span>
+          </div>
+          <p id="templateExecutionSummary" class="security-note">
+            Po wyborze szablonu wpiszesz realne powtórzenia, ciężar, czas lub dystans dla dzisiejszej sesji.
+          </p>
+          <div class="table-wrap">
+            <table class="entries-table template-execution-table">
+              <thead>
+                <tr>
+                  <th>Ćwiczenie</th>
+                  <th>Seria</th>
+                  <th>Plan</th>
+                  <th>Powt. / dyst.</th>
+                  <th>Kg / czas</th>
+                  <th>RPE</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="templateExecutionBody"></tbody>
+            </table>
+          </div>
+          <div class="action-row">
+            <button id="saveTemplateExecutionButton" class="button button-primary" type="button">Zapisz wykonanie dnia</button>
+            <button id="clearTemplateExecutionButton" class="button button-subtle" type="button">Wyczyść wykonanie z tego szablonu</button>
+          </div>
+        </div>
+
+        <div id="blankTemplateNameRow" class="inline-template-create is-hidden">
+          <label class="field">
+            <span>Nazwa szablonu</span>
+            <input id="blankTemplateNameInput" type="text" maxlength="80" placeholder="np. Push A / Bieganie / Full Body">
+          </label>
+          <button id="confirmBlankTemplateButton" class="button button-primary" type="button">OK</button>
+          <button id="cancelBlankTemplateButton" class="button button-subtle" type="button">Anuluj</button>
+        </div>
+
+        <p class="security-note inline-help">
+          Wybierz zapisany szablon i wpisz realne wykonanie. Jeśli chcesz zmienić plan na stałe, użyj przycisku `Edytuj szablon`.
+        </p>
+
+        <div class="template-builder-grid">
+          <div class="template-builder-card">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">Generator treningów</p>
+                <h3>Optymalny szablon z dostępnych ćwiczeń</h3>
+              </div>
+              <button id="toggleTrainingGeneratorButton" class="button button-subtle" type="button">Rozwiń generator</button>
+            </div>
+            <div id="trainingGeneratorContent" class="training-generator-content is-hidden">
+            <div class="form-grid">
+              <label class="field">
+                <span>Nazwa wygenerowanego planu</span>
+                <input id="aiTemplateNameInput" type="text" maxlength="80" placeholder="np. Full Body AI A">
+              </label>
+              <label class="field">
+                <span>Typ jednostki</span>
+                <select id="aiWorkoutFocusInput">
+                  <option value="full_body">Full body</option>
+                  <option value="upper">Góra ciała</option>
+                  <option value="lower">Dol ciała</option>
+                  <option value="push">Push</option>
+                  <option value="pull">Pull</option>
+                  <option value="legs">Legs</option>
+                  <option value="chest">Klata</option>
+                  <option value="back">Plecy</option>
+                  <option value="shoulders">Barki</option>
+                  <option value="arms">Ramiona</option>
+                  <option value="core">Core</option>
+                  <option value="endurance">Wydolność</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Tryb treningu</span>
+                <select id="aiPriorityModeInput">
+                  <option value="">Auto z profilu</option>
+                  <option value="cut">Redukcja</option>
+                  <option value="mass">Masa</option>
+                  <option value="strength">Siła</option>
+                  <option value="conditioning">Kondycja</option>
+                  <option value="health">Zdrowie</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Cel przygotowania</span>
+                <select id="aiPreparationGoalSelect">
+                  <option value="">Bez celu z deadline'em</option>
+                </select>
+                <p class="field-hint">Wybierz cel, a trener AI dopasuje typ bodźca, ćwiczenia, RPE i objętość pod deadline.</p>
+              </label>
+              <label class="field">
+                <span>Liczba ćwiczeń głównych</span>
+                <input id="aiExerciseLimitInput" type="number" min="3" max="12" step="1" value="6">
+              </label>
+              <label class="field">
+                <span>Filtr ćwiczeń</span>
+                <input id="aiExerciseFilterInput" type="text" maxlength="80" placeholder="np. przysiad, lawka, plecy">
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="selectAiPopularExercisesButton" class="button button-subtle" type="button">Wybierz najoptymalniejszy</button>
+              <button id="clearAiExercisesButton" class="button button-subtle" type="button">Wyczyść wybór</button>
+              <button id="generateAiTemplateButton" class="button button-primary" type="button">Generuj szablon</button>
+            </div>
+            <div id="aiExercisePicker" class="exercise-picker-grid" aria-live="polite"></div>
+            <p id="aiTemplateStatus" class="filter-summary">Wybierz typ jednostki i ćwiczenia, które realnie możesz wykonywać. Generator doda rozgrzewkę, część główną i rozciąganie pod Twój cel.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="templatePreviewBlock" class="planner-block is-hidden">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Podgląd szablonu</p>
+            <h3 id="templateExerciseEditorTitle">Ćwiczenia wybranego szablonu</h3>
+          </div>
+          <span id="templateExerciseModeBadge" class="status-pill status-locked">Podgląd szablonu</span>
+        </div>
+
+        <p id="templateSummary" class="security-note">
+          Wybierz zapisany szablon, aby dopracować ćwiczenia bez przepisywania całego planu.
+        </p>
+
+        <form id="templateExerciseForm" class="form-grid is-hidden" novalidate>
+          <label class="field">
+            <span>Ćwiczenie</span>
+            <input id="templateExerciseNameInput" type="text" list="exerciseSuggestions" maxlength="80" placeholder="np. martwy ciąg">
+          </label>
+
+          <label class="field">
+            <span>Profil aktywności</span>
+            <select id="templateActivityProfileInput">
+              <option value="strength">Siłowe / oporowe</option>
+              <option value="running">Bieganie</option>
+              <option value="running_drills">Technika biegu / skipy</option>
+              <option value="running_strides">Przebieżki / rytmy</option>
+              <option value="sprint">Sprinty krótkie</option>
+              <option value="hill_sprint">Podbiegi / siła biegowa</option>
+              <option value="interval_run">Interwały biegowe</option>
+              <option value="tempo_run">Bieg tempowy / progowy</option>
+              <option value="fartlek">Fartlek</option>
+              <option value="fast_walk">Szybki marsz</option>
+              <option value="incline_walk">Marsz pod górę / incline</option>
+              <option value="cycling">Rower</option>
+              <option value="elliptical">Orbitrek</option>
+              <option value="rowing">Wioślarz</option>
+              <option value="hiking">Hiking / trekking</option>
+              <option value="swimming">Pływanie</option>
+              <option value="hiit">Interwały / HIIT</option>
+              <option value="conditioning_circuit">Obwód / conditioning</option>
+              <option value="crossfit">Crossfit / metcon</option>
+              <option value="endurance">Wydolność bazowa</option>
+              <option value="mobility">Mobilność / rozgrzewka</option>
+              <option value="stretching">Rozciąganie / cooldown</option>
+              <option value="team_sport">Sport / rekreacja</option>
+            </select>
+            <p class="field-hint">Dla klasycznej siłowni zostaw `Siłowe / oporowe`. Profil cardio wybieraj wtedy, gdy głównym bodźcem jest ruch, czas i tempo.</p>
+          </label>
+
+          <label class="field">
+            <span>Liczba serii</span>
+            <input id="templateSetsInput" type="number" min="1" max="20" step="1" placeholder="4">
+          </label>
+
+          <label class="field">
+            <span>Powtórzenia</span>
+            <input id="templateRepsInput" type="number" min="1" max="50" step="1" placeholder="8">
+          </label>
+
+          <label class="field">
+            <span>Ciężar (kg)</span>
+            <input id="templateWeightInput" type="number" min="0" max="600" step="0.5" placeholder="100">
+          </label>
+
+          <p id="templateExerciseLoadHint" class="field-hint field-wide">
+            Biblioteka ćwiczeń rozpoznaje także ruchy z masą ciała. Dla pompek, dipów i podciągania wpisujesz tutaj dodatkowy ciężar.
+          </p>
+
+          <label class="field">
+            <span>Dystans (km, opcjonalnie)</span>
+            <input id="templateDistanceInput" type="number" min="0" max="300" step="0.1" placeholder="6.5">
+          </label>
+
+          <label class="field">
+            <span>Przewyższenie (m, opcjonalnie)</span>
+            <input id="templateElevationInput" type="number" min="0" max="5000" step="10" placeholder="240">
+          </label>
+
+          <label class="field">
+            <span>Czas ćwiczenia (min)</span>
+            <input id="templateDurationMinInput" type="number" min="5" max="240" step="1" placeholder="60">
+          </label>
+
+          <label class="field">
+            <span>Intensywność RPE (opcjonalnie)</span>
+            <input id="templateIntensityInput" type="number" min="4" max="10" step="0.5" placeholder="7.5">
+            <p class="field-hint">Jeśli nie wiesz co wpisać, zacznij od `7-8` dla większości serii roboczych. Z czasem możesz tę ocenę doprecyzować.</p>
+          </label>
+
+          <label class="field field-wide">
+            <span>Notatka do ćwiczenia</span>
+            <textarea id="templateExerciseNotesInput" rows="3" maxlength="180" placeholder="Np. zatrzymanie na dole, ostatnia seria blisko upadku"></textarea>
+          </label>
+
+          <div class="action-row field-wide">
+            <button id="saveTemplateExerciseButton" class="button button-primary" type="submit">Dodaj ćwiczenie do szablonu</button>
+            <button id="resetTemplateExerciseButton" class="button button-subtle" type="button">Wyczyść pola</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table class="entries-table">
+            <thead>
+              <tr>
+                <th>Lp.</th>
+                <th>Ćwiczenie</th>
+                <th>Plan</th>
+                <th>Czas</th>
+                <th>Notatka</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="templateExerciseBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="planner-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Plan tygodniowy</p>
+            <h3>Plan tygodnia i kontrola progresu</h3>
+          </div>
+          <span id="programModeBadge" class="status-pill status-locked">Brak programu</span>
+        </div>
+
+        <p id="programSummary" class="security-note">
+          Przypisz zapisane szablony do dni tygodnia, a trener AI policzy aktywny tydzień, porówna wykonanie z historią i poda zalecenia bez ręcznego wpisywania liczby serii czy intensywności.
+        </p>
+
+        <form id="programForm" class="form-grid" novalidate>
+          <label class="field">
+            <span>Nazwa programu</span>
+            <input id="programNameInput" type="text" maxlength="80" placeholder="np. Push Pull Legs 4 tygodnie">
+          </label>
+
+          <label class="field">
+            <span>Zapisany program</span>
+            <select id="programSelect">
+              <option value="">Brak zapisanych programów</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Start planu</span>
+            <input id="programStartDateInput" type="date">
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>Długość cyklu (tyg.)</span>
+            <input id="programCycleLengthInput" type="number" min="2" max="6" step="1" value="4">
+          </label>
+
+          <label class="field">
+            <span>Tryb progresji</span>
+            <select id="programProgressionModeInput">
+              <option value="double_progression">Double progression</option>
+              <option value="load_priority">Najpierw ciężar</option>
+              <option value="reps_priority">Najpierw powtórzenia</option>
+            </select>
+            <p class="field-hint">`Double progression` najpierw domyka widełki powtórzeń, a potem dokłada ciężar. To zwykle najbezpieczniejszy start.</p>
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>RPE do progresji</span>
+            <input id="programRpeThresholdInput" type="number" min="5" max="10" step="0.5" value="8.5">
+            <p class="field-hint">Jeśli ostatnia sesja była wyraźnie cięższa niż ten próg, aplikacja częściej zaleci zostać na tym samym ciężarze.</p>
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>Skok góra ciała (kg)</span>
+            <input id="programUpperIncrementInput" type="number" min="0.5" max="20" step="0.5" value="2.5">
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>Skok dół ciała (kg)</span>
+            <input id="programLowerIncrementInput" type="number" min="0.5" max="30" step="0.5" value="5">
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>Skok akcesoria / BW (kg)</span>
+            <input id="programAccessoryIncrementInput" type="number" min="0" max="10" step="0.5" value="1">
+          </label>
+
+          <label class="field program-advanced-field is-hidden">
+            <span>Tydzień deload</span>
+            <select id="programDeloadWeekInput">
+              <option value="4">4</option>
+            </select>
+            <p class="field-hint">Deload to lżejszy tydzień na odzyskanie świeżości. Dla większości osób tydzień `4` jest sensownym ustawieniem startowym.</p>
+          </label>
+
+          <label class="field">
+            <span>Podgląd dnia</span>
+            <input id="programPreviewDateInput" type="date">
+          </label>
+
+          <label class="field field-wide">
+            <span>Notatka do programu</span>
+            <textarea id="programNotesInput" rows="3" maxlength="220" placeholder="Np. Push A w poniedziałek, Pull w środę, Legs w piątek, cardio jako lekki dzień"></textarea>
+          </label>
+
+          <div class="action-row field-wide">
+            <button id="saveProgramButton" class="button button-primary" type="button">Zapisz program</button>
+            <button id="aiGenerateProgramButton" class="button" type="button">Ułóż tydzień z szablonów</button>
+            <button id="applyProgramDayButton" class="button" type="button">Wczytaj jednostkę do daty</button>
+            <button id="resetProgramButton" class="button button-subtle" type="button">Nowy program</button>
+            <button id="deleteProgramButton" class="button button-subtle" type="button">Usuń program</button>
+          </div>
+        </form>
+
+        <div class="program-grid">
+          <div>
+            <h4 class="micro-heading">Rozkład tygodnia</h4>
+            <div class="table-wrap">
+              <table class="entries-table program-table">
+                <thead>
+                  <tr>
+                    <th>Dzień</th>
+                    <th>Jednostka</th>
+                    <th>Szablon</th>
+                    <th>Tryb</th>
+                    <th>Profil progresji</th>
+                    <th>Akcent</th>
+                  </tr>
+                </thead>
+                <tbody id="programScheduleBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="planner-block">
+          <h3>Jednostka dla wybranej daty</h3>
+          <p id="programPreviewSummary" class="security-note">
+            Po zapisaniu programu zobaczysz tutaj plan dnia, realny tydzień programu i rekomendacje progresji dla ćwiczeń.
+          </p>
+
+          <div id="programPreviewCards" class="metric-grid" aria-live="polite"></div>
+          <ul id="programPreviewList" class="insights-list plan-list"></ul>
+
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Ćwiczenie</th>
+                  <th>Plan bazowy</th>
+                  <th>Zalecenie</th>
+                  <th>Decyzja adaptacyjna AI</th>
+                </tr>
+              </thead>
+              <tbody id="programExercisePreviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="insights-layout">
+        <div>
+          <form id="workoutForm" class="form-grid" novalidate>
+            <label class="field">
+              <span>Data treningu</span>
+              <input id="workoutDateInput" type="date" required>
+            </label>
+
+            <label class="field">
+              <span>Ćwiczenie</span>
+              <input id="exerciseNameInput" type="text" list="exerciseSuggestions" maxlength="80" placeholder="np. martwy ciąg">
+              <datalist id="exerciseSuggestions"></datalist>
+            </label>
+
+            <label class="field">
+              <span>Profil aktywności</span>
+              <select id="activityProfileInput">
+                <option value="strength">Siłowe / oporowe</option>
+                <option value="running">Bieganie</option>
+                <option value="running_drills">Technika biegu / skipy</option>
+                <option value="running_strides">Przebieżki / rytmy</option>
+                <option value="sprint">Sprinty krótkie</option>
+                <option value="hill_sprint">Podbiegi / siła biegowa</option>
+                <option value="interval_run">Interwały biegowe</option>
+                <option value="tempo_run">Bieg tempowy / progowy</option>
+                <option value="fartlek">Fartlek</option>
+                <option value="fast_walk">Szybki marsz</option>
+                <option value="incline_walk">Marsz pod górę / incline</option>
+                <option value="cycling">Rower</option>
+                <option value="elliptical">Orbitrek</option>
+                <option value="rowing">Wioślarz</option>
+                <option value="hiking">Hiking / trekking</option>
+                <option value="swimming">Pływanie</option>
+                <option value="hiit">Interwały / HIIT</option>
+                <option value="conditioning_circuit">Obwód / conditioning</option>
+                <option value="crossfit">Crossfit / metcon</option>
+                <option value="endurance">Wydolność bazowa</option>
+                <option value="mobility">Mobilność / rozgrzewka</option>
+                <option value="stretching">Rozciąganie / cooldown</option>
+                <option value="team_sport">Sport / rekreacja</option>
+              </select>
+              <p class="field-hint">Profil aktywności mówi aplikacji, jak liczyć spalanie i co traktować jako główny parametr progresu.</p>
+            </label>
+
+            <label class="field">
+              <span>Liczba serii</span>
+              <input id="setsInput" type="number" min="1" max="20" step="1" placeholder="4">
+              <p class="field-hint">Dla cardio możesz to pole zostawić puste. Dla siłowni wpisuj zwykle tylko serie robocze, nie rozgrzewkowe.</p>
+            </label>
+
+            <label class="field">
+              <span>Powtórzenia</span>
+              <input id="repsInput" type="number" min="1" max="50" step="1" placeholder="8">
+            </label>
+
+            <label class="field">
+              <span>Ciężar (kg)</span>
+              <input id="exerciseWeightInput" type="number" min="0" max="600" step="0.5" placeholder="100">
+              <p class="field-hint">Przy pompkach, dipach i podciąganiu wpisujesz tutaj tylko dodatkowy ciężar ponad masę ciała.</p>
+            </label>
+
+            <p id="exerciseLoadHint" class="field-hint field-wide">
+              Wybierz ćwiczenie z biblioteki, aby dostać gotowy szablon ruchu, domyślne parametry i poprawne liczenie ćwiczeń z masą ciała.
+            </p>
+
+            <label class="field">
+              <span>Dystans (km, opcjonalnie)</span>
+              <input id="distanceInput" type="number" min="0" max="300" step="0.1" placeholder="6.5">
+            </label>
+
+            <label class="field">
+              <span>Przewyższenie (m, opcjonalnie)</span>
+              <input id="elevationGainInput" type="number" min="0" max="5000" step="10" placeholder="240">
+            </label>
+
+            <label class="field">
+              <span>Czas ćwiczenia (min)</span>
+              <input id="durationMinInput" type="number" min="5" max="240" step="1" placeholder="60">
+              <p class="field-hint">W siłowni możesz wpisać przybliżony czas ćwiczenia lub całego bloku. W cardio to jedna z głównych danych wejściowych.</p>
+            </label>
+
+            <label class="field">
+              <span>Intensywność RPE (opcjonalnie)</span>
+              <input id="intensityInput" type="number" min="4" max="10" step="0.5" placeholder="7.5">
+              <p class="field-hint">`6-7` oznacza raczej lekko, `8-9` ciężko, `10` pełne maksimum. To pole pomaga dobrać dalszą progresję i deload.</p>
+            </label>
+
+            <label class="field field-wide">
+              <span>Notatka do ćwiczenia</span>
+              <textarea id="workoutNotesInput" rows="3" maxlength="180" placeholder="Np. ostatnia seria do upadku, tempo kontrolowane"></textarea>
+            </label>
+
+            <div class="action-row">
+              <button id="saveWorkoutButton" class="button button-primary" type="submit">Dodaj ćwiczenie</button>
+              <button id="resetWorkoutButton" class="button button-subtle" type="button">Wyczyść trening</button>
+              <button id="exportWorkoutsCsvButton" class="button button-subtle" type="button">Eksport ćwiczeń CSV</button>
+              <button id="importWorkoutsCsvButton" class="button button-subtle" type="button">Import ćwiczeń CSV</button>
+            </div>
+
+            <p class="security-note field-wide inline-help">
+              Wpisujesz tutaj pojedynczy ruch albo aktywność. Dla cardio możesz zostawić serie, powtórzenia i ciężar puste, a zamiast tego podać profil,
+              czas oraz opcjonalnie dystans i przewyższenie. Wszystkie wpisy z tego samego dnia są potem sumowane do jednej sesji pod kątem wydatku energetycznego.
+            </p>
+          </form>
+
+          <div class="post-workout-coach planner-block">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">Po treningu</p>
+                <h3>Asystent decyzji po sesji</h3>
+              </div>
+              <span id="postWorkoutCoachStatus" class="status-pill status-locked">Oczekuje</span>
+            </div>
+            <p class="security-note">
+              Po zakończeniu treningu wpisz, jak ciężka była cała sesja w skali 1-10. Aplikacja zapisze ocenę przy ćwiczeniach z wybranej daty i powie, czy następnym razem warto progresować, utrzymać plan, czy zejść z objętości.
+            </p>
+            <div class="form-grid post-workout-grid">
+              <label class="field">
+                <span>Jak ciężko było? (1-10)</span>
+                <input id="postWorkoutDifficultyInput" type="number" min="1" max="10" step="1" placeholder="np. 7">
+              </label>
+              <label class="field field-wide">
+                <span>Krótka notatka po sesji</span>
+                <textarea id="postWorkoutNotesInput" rows="2" maxlength="180" placeholder="Np. technika dobra, ostatnie serie ciężkie, bark bez bólu"></textarea>
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="savePostWorkoutDecisionButton" class="button button-primary" type="button">Zapisz ocenę i pokaż decyzję</button>
+              <button id="clearPostWorkoutDecisionButton" class="button button-subtle" type="button">Wyczyść ocenę</button>
+            </div>
+            <div id="postWorkoutDecisionCards" class="metric-grid post-workout-grid-output" aria-live="polite"></div>
+            <ul id="postWorkoutDecisionList" class="insights-list plan-list"></ul>
+          </div>
+        </div>
+
+        <div>
+          <h3>Ostatnie aktywności treningowe</h3>
+          <div class="filter-toolbar">
+            <div class="filter-grid">
+              <label class="field">
+                <span>Szukaj ćwiczenia</span>
+                <input id="workoutSearchInput" type="text" maxlength="80" placeholder="np. lawka, bieg, podciaganie">
+              </label>
+              <label class="field">
+                <span>Profil aktywności</span>
+                <select id="workoutProfileFilterInput">
+                  <option value="all">Wszystkie</option>
+                  <option value="strength">Siłowe / oporowe</option>
+                  <option value="running">Bieganie</option>
+                  <option value="running_drills">Technika biegu / skipy</option>
+                  <option value="running_strides">Przebieżki / rytmy</option>
+                  <option value="sprint">Sprinty krótkie</option>
+                  <option value="hill_sprint">Podbiegi / siła biegowa</option>
+                  <option value="interval_run">Interwały biegowe</option>
+                  <option value="tempo_run">Bieg tempowy / progowy</option>
+                  <option value="fartlek">Fartlek</option>
+                  <option value="fast_walk">Szybki marsz</option>
+                  <option value="incline_walk">Marsz pod górę / incline</option>
+                  <option value="cycling">Rower</option>
+                  <option value="elliptical">Orbitrek</option>
+                  <option value="rowing">Wioślarz</option>
+                  <option value="hiking">Hiking / trekking</option>
+                  <option value="swimming">Pływanie</option>
+                  <option value="hiit">Interwaly / HIIT</option>
+                  <option value="conditioning_circuit">Obwod / conditioning</option>
+                  <option value="crossfit">Crossfit / metcon</option>
+                  <option value="endurance">Wydolność bazowa</option>
+                  <option value="mobility">Mobilność / rozgrzewka</option>
+                  <option value="stretching">Rozciąganie / cooldown</option>
+                  <option value="team_sport">Sport / rekreacja</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Data od</span>
+                <input id="workoutDateFromInput" type="date">
+              </label>
+              <label class="field">
+                <span>Data do</span>
+                <input id="workoutDateToInput" type="date">
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="resetWorkoutFiltersButton" class="button button-subtle" type="button">Wyczyść filtry</button>
+            </div>
+            <p id="workoutFilterSummary" class="filter-summary">Pokazano wszystkie aktywności treningowe.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Ćwiczenie</th>
+                  <th>Plan</th>
+                  <th>Czas</th>
+                  <th>Kcal</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="workoutBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <input id="importWorkoutsCsvInput" type="file" accept=".csv,text/csv" hidden>
+
+      <div class="planner-block">
+        <h3>Ostatnie sesje treningowe</h3>
+        <div class="filter-toolbar">
+          <div class="filter-grid">
+            <label class="field">
+              <span>Data od</span>
+              <input id="sessionDateFromInput" type="date">
+            </label>
+            <label class="field">
+              <span>Data do</span>
+              <input id="sessionDateToInput" type="date">
+            </label>
+            <label class="field">
+              <span>Min. liczba ćwiczeń</span>
+              <input id="sessionMinExercisesInput" type="number" min="1" max="30" step="1" placeholder="3">
+            </label>
+            <label class="field">
+              <span>Szukaj w podgladzie</span>
+              <input id="sessionSearchInput" type="text" maxlength="80" placeholder="np. przysiad, rower, barki">
+            </label>
+          </div>
+          <div class="action-row">
+            <button id="resetSessionFiltersButton" class="button button-subtle" type="button">Wyczyść filtry</button>
+          </div>
+          <p id="sessionFilterSummary" class="filter-summary">Pokazano wszystkie sesje treningowe.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="entries-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Ćwiczenia</th>
+                <th>Aktywność</th>
+                <th>Kcal</th>
+                <th>Podgląd</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="sessionBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="planner-block">
+        <h3>Ćwiczenia i aktywności</h3>
+        <div class="filter-toolbar">
+          <div class="filter-grid">
+            <label class="field">
+              <span>Szukaj ruchu</span>
+              <input id="exerciseSearchInput" type="text" maxlength="80" placeholder="np. lawka, martwy, bieg">
+            </label>
+            <label class="field">
+              <span>Profil aktywności</span>
+              <select id="exerciseProfileFilterInput">
+                <option value="all">Wszystkie</option>
+                <option value="strength">Siłowe / oporowe</option>
+                <option value="cardio">Cardio / wydolność</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Min. sesji / 30 dni</span>
+              <input id="exerciseMinSessionsInput" type="number" min="0" max="60" step="1" placeholder="2">
+            </label>
+          </div>
+          <div class="action-row">
+            <button id="resetExerciseFiltersButton" class="button button-subtle" type="button">Wyczyść filtry</button>
+          </div>
+          <p id="exerciseFilterSummary" class="filter-summary">Pokazano wszystkie ruchy i aktywności.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="entries-table">
+            <thead>
+              <tr>
+                <th>Ruch / aktywność</th>
+                <th>Ostatni trening</th>
+                <th>Ostatni parametr</th>
+                <th>Top wynik</th>
+                <th>Sesje 30 dni</th>
+                <th>Aktywność 30 dni</th>
+                <th>Kcal 30 dni</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody id="exerciseSummaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="exerciseHistorySection" class="panel app-lockable tab-panel" data-tab-panel="history">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Progres ruchu</p>
+          <h2>Historia aktywności</h2>
+        </div>
+        <p class="panel-support">Wybierz konkretny ruch albo aktywność, aby śledzić parametry sesji, kalorie i najważniejsze sygnały progresu.</p>
+      </div>
+
+      <div class="form-grid">
+        <label class="field">
+          <span>Ćwiczenie do analizy</span>
+          <select id="exerciseHistorySelect">
+            <option value="">Brak zapisanych ćwiczeń</option>
+          </select>
+        </label>
+      </div>
+
+      <p id="exerciseHistorySummary" class="security-note">
+        Po zapisaniu ćwiczeń aplikacja pokaże tutaj pełną historię pojedynczego ruchu.
+      </p>
+
+      <div class="filter-toolbar">
+        <div class="filter-grid">
+          <label class="field">
+            <span>Data od</span>
+            <input id="exerciseHistoryDateFromInput" type="date">
+          </label>
+          <label class="field">
+            <span>Data do</span>
+            <input id="exerciseHistoryDateToInput" type="date">
+          </label>
+          <label class="field">
+            <span>Szukaj w notatce</span>
+            <input id="exerciseHistoryNotesInput" type="text" maxlength="80" placeholder="np. technika, lekko, PR">
+          </label>
+        </div>
+        <div class="action-row">
+          <button id="resetExerciseHistoryFiltersButton" class="button button-subtle" type="button">Wyczyść filtry</button>
+        </div>
+        <p id="exerciseHistoryFilterSummary" class="filter-summary">Pokazano cała historie wybranego ruchu.</p>
+      </div>
+
+      <div id="exerciseHistoryCards" class="metric-grid" aria-live="polite"></div>
+
+      <div class="chart-grid">
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Główny parametr sesji</h3>
+            <p>Dla siły pokazuje najważniejszy parametr serii, a dla cardio zwykle dystans albo najważniejszy parametr wysiłku.</p>
+          </div>
+          <canvas id="exerciseWeightChart" width="900" height="320" aria-label="Wykres głównego parametru ćwiczenia"></canvas>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Aktywność sesji</h3>
+            <p>Dla siły pokazuje wydatek energetyczny, a dla cardio wydatek, czas lub dystans zależnie od danych.</p>
+          </div>
+          <canvas id="exerciseVolumeChart" width="900" height="320" aria-label="Wykres aktywności sesji"></canvas>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Tempo / 1RM</h3>
+            <p>Dla siły pokazuje trend 1RM, a dla cardio tempo lub inny sygnał jakości wysiłku.</p>
+          </div>
+          <canvas id="exerciseOneRmChart" width="900" height="320" aria-label="Wykres szacowanego 1RM ćwiczenia"></canvas>
+        </article>
+      </div>
+      <div class="insights-layout">
+        <div>
+          <h3>Ostatnie PR-y</h3>
+          <ul id="exercisePrList" class="insights-list"></ul>
+        </div>
+        <div>
+          <h3>Ostatnie sesje wybranego ćwiczenia</h3>
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Plan / top set</th>
+                  <th>Główny parametr</th>
+                  <th>Aktywność</th>
+                  <th>Tempo / 1RM</th>
+                  <th>Kcal</th>
+                  <th>Notatka</th>
+                </tr>
+              </thead>
+              <tbody id="exerciseHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="physiqueSection" class="panel app-lockable tab-panel" data-tab-panel="physique">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Sylwetka</p>
+          <h2>Pomiary i zdjęcia progresu</h2>
+        </div>
+        <p class="panel-support">Obwody i zdjęcia pomagają ocenić redukcję, rekompozycję i jakość budowy masy znacznie lepiej niż sama waga.</p>
+      </div>
+
+      <div id="physiqueCards" class="metric-grid" aria-live="polite"></div>
+
+      <div class="insights-layout">
+        <div>
+          <h3>Ostatnie pomiary</h3>
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Pas</th>
+                  <th>Biodra</th>
+                  <th>Klatka</th>
+                  <th>Ramię</th>
+                  <th>Udo</th>
+                  <th>Zdjęcia</th>
+                </tr>
+              </thead>
+              <tbody id="physiqueBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3>Galeria progresu</h3>
+          <div id="progressPhotoGallery" class="photo-gallery" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+    <section id="analysisSection" class="panel app-lockable tab-panel" data-tab-panel="analysis">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Pulpit AI</p>
+          <h2>Analiza postępów</h2>
+        </div>
+        <p class="panel-support">Model działa offline i bazuje na trendach masy, treningów, kalorii oraz regeneracji.</p>
+      </div>
+
+      <div id="metricCards" class="metric-grid" aria-live="polite"></div>
+
+      <div class="planner-block">
+        <h3>Lokalny model predykcyjny</h3>
+        <p class="security-note">
+          Model uczy się offline na Twojej historii w przegladarce. Dane nie są wysylane na zaden serwer.
+        </p>
+        <div id="localAiModelCards" class="metric-grid" aria-live="polite"></div>
+        <ul id="localAiModelList" class="insights-list plan-list"></ul>
+      </div>
+    </section>
+
+    <section id="planSection" class="panel app-lockable tab-panel" data-tab-panel="plan">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Trener</p>
+          <h2>Plan trenerski</h2>
+        </div>
+        <p class="panel-support">Tutaj aplikacja przekłada dane na decyzję na dziś, korektę treningu i priorytety progresu.</p>
+      </div>
+
+      <div class="planner-block coach-plan-hero">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Decyzja trenera</p>
+            <h3>Co robić teraz</h3>
+          </div>
+          <span id="coachPlanStatus" class="status-pill status-locked">Oczekuje</span>
+        </div>
+        <p id="coachPlanSummary" class="security-note section-intro">
+          Po zalogowaniu trener połączy treningi, regenerację, jedzenie, cele i historię w konkretną decyzję.
+        </p>
+        <div id="coachPlanCards" class="metric-grid coach-plan-grid" aria-live="polite"></div>
+      </div>
+
+      <div class="planner-block">
+        <h3>Priorytety najbliższych 7 dni</h3>
+        <ul id="coachPlanList" class="insights-list plan-list"></ul>
+      </div>
+
+      <div class="planner-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Progresja</p>
+            <h3>Następne decyzje treningowe</h3>
+          </div>
+        </div>
+        <p class="security-note">Tabela pokazuje najważniejsze ruchy z planu albo historii i mówi, co zrobić przy kolejnym podejściu: dodać powtórzenia, zostać, obciąć objętość albo skupić się na jakości.</p>
+        <div class="table-wrap">
+          <table class="entries-table coach-plan-table">
+            <thead>
+              <tr>
+                <th>Priorytet</th>
+                <th>Ostatni sygnał</th>
+                <th>Co zrobić następnym razem</th>
+                <th>Powód</th>
+              </tr>
+            </thead>
+            <tbody id="coachPlanTrainingBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="progressCards" class="progress-grid" aria-live="polite"></div>
+
+      <div class="planner-block coach-report-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Deadline</p>
+            <h3>Tryb przygotowania do celu</h3>
+          </div>
+          <span id="preparationPlanStatus" class="status-pill status-locked">Oczekuje</span>
+        </div>
+        <div id="preparationPlanCards" class="metric-grid preparation-grid" aria-live="polite"></div>
+        <ul id="preparationPlanList" class="insights-list plan-list"></ul>
+      </div>
+
+      <div class="planner-block">
+        <h3>Plan na najbliższe dni</h3>
+        <ul id="weeklyPlanList" class="insights-list plan-list"></ul>
+      </div>
+    </section>
+
+    <section id="chartsSection" class="panel charts-panel app-lockable tab-panel" data-tab-panel="charts">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Wizualizacje</p>
+          <h2>Trend i prognoza</h2>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Masa ciała</h3>
+            <p>Linia ciągła pokazuje historię, przerywana prognozę.</p>
+          </div>
+          <canvas id="weightChart" width="900" height="320" aria-label="Wykres masy ciała"></canvas>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Spalone kalorie</h3>
+            <p>Wykres łączy BMR, kroki i wydatek treningowy dla każdego dnia.</p>
+          </div>
+          <canvas id="energyChart" width="900" height="320" aria-label="Wykres spalonych kalorii"></canvas>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Sesje / tydzień</h3>
+            <p>Pokazuje liczbę aktywnych dni treningowych w tygodniu oraz krótką prognozę regularności.</p>
+          </div>
+          <canvas id="sessionChart" width="900" height="320" aria-label="Wykres tygodniowych sesji treningowych"></canvas>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-header">
+            <h3>Obwód pasa</h3>
+            <p>To jeden z najbardziej praktycznych wskaźników zmian kompozycji ciała między kolejnymi tygodniami.</p>
+          </div>
+          <canvas id="waistChart" width="900" height="320" aria-label="Wykres obwodu pasa"></canvas>
+        </article>
+      </div>
+    </section>
+
+    <section id="insightsSection" class="panel insights-panel app-lockable tab-panel" data-tab-panel="insights">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Rekomendacje</p>
+          <h2>Wnioski i alerty</h2>
+        </div>
+      </div>
+
+      <div class="planner-block coach-report-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Kontrola ryzyka</p>
+            <h3>Alerty ryzyka</h3>
+          </div>
+          <span id="riskAlertStatus" class="status-pill status-locked">Oczekuje</span>
+        </div>
+        <div id="riskAlertCards" class="metric-grid risk-alert-grid" aria-live="polite"></div>
+      </div>
+
+      <div class="planner-block coach-report-block">
+        <div class="subpanel-heading">
+          <div>
+            <p class="eyebrow">Raport trenera</p>
+            <h3>Raport tygodniowy</h3>
+          </div>
+          <span id="weeklyReportStatus" class="status-pill status-unlocked">Tydzień</span>
+        </div>
+        <p id="weeklyReportSummary" class="security-note"></p>
+        <div id="weeklyReportCards" class="metric-grid weekly-report-grid" aria-live="polite"></div>
+        <div class="insights-layout weekly-report-layout">
+          <div>
+            <h4 class="micro-heading">Co poszło dobrze</h4>
+            <ul id="weeklyReportWins" class="insights-list plan-list"></ul>
+          </div>
+          <div>
+            <h4 class="micro-heading">Co blokuje progres</h4>
+            <ul id="weeklyReportBlocks" class="insights-list plan-list"></ul>
+          </div>
+          <div>
+            <h4 class="micro-heading">Co zmienić w następnym tygodniu</h4>
+            <ul id="weeklyReportActions" class="insights-list plan-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="insights-layout">
+        <div>
+          <h3>Najważniejsze sygnały</h3>
+          <ul id="insightsList" class="insights-list"></ul>
+        </div>
+        <div>
+          <h3>Ostatnie wpisy</h3>
+          <div class="filter-toolbar">
+            <div class="filter-grid">
+              <label class="field">
+                <span>Data od</span>
+                <input id="entriesDateFromInput" type="date">
+              </label>
+              <label class="field">
+                <span>Data do</span>
+                <input id="entriesDateToInput" type="date">
+              </label>
+              <label class="field">
+                <span>Masa od (kg)</span>
+                <input id="entriesWeightMinInput" type="number" min="0" max="400" step="0.1" placeholder="75">
+              </label>
+              <label class="field">
+                <span>Masa do (kg)</span>
+                <input id="entriesWeightMaxInput" type="number" min="0" max="400" step="0.1" placeholder="90">
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="resetEntryFiltersButton" class="button button-subtle" type="button">Wyczyść filtry</button>
+            </div>
+            <p id="entryFilterSummary" class="filter-summary">Pokazano wszystkie wpisy dzienne.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="entries-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Waga</th>
+                  <th>Kalorie</th>
+                  <th>Makro</th>
+                  <th>Bilans</th>
+                  <th>Sen</th>
+                  <th>Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="entriesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="syncScannerModal" class="sync-scanner-modal is-hidden" aria-hidden="true">
+    <div class="sync-scanner-dialog">
+      <div class="subpanel-heading">
+        <div>
+          <p class="eyebrow">Kamera</p>
+          <h3>Skaner QR synchronizacji</h3>
+        </div>
+        <button id="closeSyncScannerButton" class="button button-subtle" type="button">Zamknij</button>
+      </div>
+
+      <p id="syncScannerStatus" class="security-note">
+        Skieruj kamerę na kod QR z drugiego urządzenia. Jeśli skaner nie jest wspierany przez przeglądarkę, użyj kopiowania i wklejania kodu.
+      </p>
+
+      <div class="sync-scanner-stage">
+        <video id="syncScannerVideo" playsinline muted></video>
+      </div>
+    </div>
+  </div>
+
+  <div id="appUpdateNotice" class="update-notice is-hidden" role="status" aria-live="polite">
+    <div>
+      <strong>Nowa wersja BeTheOne jest gotowa</strong>
+      <span id="appVersionText">Aktualizacja nie narusza prywatnych danych.</span>
+    </div>
+    <div class="update-notice-actions">
+      <button id="appUpdateReloadButton" class="button button-primary button-small" type="button">Aktualizuj</button>
+      <button id="appUpdateDismissButton" class="button button-subtle button-small" type="button">Później</button>
+    </div>
+  </div>
+
+  <aside id="statusBanner" class="status-banner" role="status" aria-live="polite"></aside>
+</body>
+</html>
