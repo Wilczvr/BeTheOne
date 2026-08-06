@@ -1,11 +1,11 @@
-const APP_VERSION = "2026.08.06.3";
+const APP_VERSION = "2026.08.06.4";
 const CACHE_NAME = `betheone-static-${APP_VERSION}`;
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./styles.css?v=20260806-sports-help-v1",
-  "./app.js?v=20260806-sports-help-v1",
+  "./styles.css?v=20260806-league-account-v1",
+  "./app.js?v=20260806-league-account-v1",
   "./league-config.js?v=20260624b",
   "./vendor/supabase.min.js?v=20260624b",
   "./vendor/qrcode.js",

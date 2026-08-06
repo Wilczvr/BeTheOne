@@ -4,8 +4,8 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.06.3";
-  const DATA_SCHEMA_VERSION = 2;
+  const APP_VERSION = "2026.08.06.4";
+  const DATA_SCHEMA_VERSION = 3;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
   const LOCAL_SESSION_DB_VERSION = 1;
@@ -184,6 +184,7 @@
   const LOCAL_ONLY_HOSTS = new Set(["localhost", "127.0.0.1"]);
   const LEAGUE_ACTIVE_KEY = "betheone.league.active.v1";
   const LEAGUE_INVITES_KEY = "betheone.league.invites.v1";
+  const LEAGUE_AUTH_STORAGE_KEY = "betheone-league-auth-v1";
   const LEAGUE_INVITE_PREFIX = "BTO-LEAGUE-1:";
   const LEAGUE_SYNC_DELAY_MS = 1200;
   const LEAGUE_REFRESH_DELAY_MS = 450;
@@ -2136,7 +2137,7 @@
       return;
     }
 
-    const localVault = readStoredVault();
+    let localVault = readStoredVault();
     if (!localVault) {
       showStatus("Brak lokalnego vaulta do synchronizacji.", true);
       return;
@@ -2148,13 +2149,17 @@
     }
 
     try {
-      validateVaultShape(localVault);
       state.cloudSync.loading = true;
       state.cloudSync.direction = "upload";
       state.cloudSync.error = "";
       updateCloudSyncUi();
 
       const session = await ensureCloudSyncSession();
+      rememberLeagueAccountBinding(session);
+      restoreLeagueStateFromVault();
+      await persistLeagueAccountMeta({ announce: false });
+      localVault = readStoredVault();
+      validateVaultShape(localVault);
       const localChecksum = await calculateVaultChecksum(localVault);
       const remoteRecord = await fetchCloudVaultRecord(session.user.id);
 
@@ -4788,6 +4793,7 @@
   function createEmptyLeagueState() {
     return {
       client: null,
+      authMode: "",
       configured: false,
       session: null,
       profile: null,
@@ -4879,18 +4885,23 @@
     }
 
     try {
-      state.league.client = supabaseApi.createClient(config.url, config.publishableKey, {
+      const anonymousClient = supabaseApi.createClient(config.url, config.publishableKey, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: false,
-          storageKey: "betheone-league-auth-v1",
+          storageKey: LEAGUE_AUTH_STORAGE_KEY,
         },
       });
+      state.league.client = anonymousClient;
+      state.league.authMode = "anonymous";
       state.league.configured = true;
       state.league.error = "";
       state.league.activeLeagueId = readStoredActiveLeagueId();
-      state.league.client.auth.onAuthStateChange((_event, session) => {
+      anonymousClient.auth.onAuthStateChange((_event, session) => {
+        if (state.league.client !== anonymousClient || state.league.authMode !== "anonymous") {
+          return;
+        }
         state.league.session = session || null;
         renderLeaguePanel();
       });
@@ -5054,6 +5065,11 @@
     clearPendingEmailRecovery();
 
     await persistVault();
+    await adoptAccountSessionForLeague().catch(() => null);
+    await persistLeagueAccountMeta({ announce: false });
+    if (state.league.activeLeagueId) {
+      ensureLeagueReady({ refresh: true, publish: true, announce: false });
+    }
     elements.recoveryEmailInput.value = verifiedEmail;
     elements.recoveryEmailOtpInput.value = "";
     state.emailRecovery.linkSessionReady = false;
@@ -5133,6 +5149,174 @@
     }
   }
 
+  function normalizeLeagueAccountData(source) {
+    const raw = source && typeof source === "object" ? source : {};
+    const inviteSource = raw.inviteTokens && typeof raw.inviteTokens === "object"
+      ? raw.inviteTokens
+      : raw.invites && typeof raw.invites === "object"
+        ? raw.invites
+        : {};
+    const inviteTokens = {};
+
+    Object.entries(inviteSource).forEach(([leagueId, token]) => {
+      const safeLeagueId = sanitizePlainText(leagueId, 80);
+      const safeToken = sanitizeLeagueInviteToken(token);
+      if (safeLeagueId && safeToken) {
+        inviteTokens[safeLeagueId] = safeToken;
+      }
+    });
+
+    return {
+      activeLeagueId: sanitizePlainText(raw.activeLeagueId || raw.activeLeagueID || "", 80),
+      inviteTokens,
+      authUserId: sanitizePlainText(raw.authUserId || "", 80),
+      authEmail: normalizeEmailAddress(raw.authEmail || ""),
+      updatedAt: typeof raw.updatedAt === "string" && raw.updatedAt ? raw.updatedAt : "",
+    };
+  }
+
+  function ensureLeagueDataContainer() {
+    if (!state.data || typeof state.data !== "object") {
+      return normalizeLeagueAccountData(null);
+    }
+    state.data.league = normalizeLeagueAccountData(state.data.league);
+    return state.data.league;
+  }
+
+  function mergeStoredLeagueInvitesWithVault() {
+    const storedTokens = readStoredLeagueInvites();
+    const vaultMeta = ensureLeagueDataContainer();
+    const mergedTokens = {
+      ...vaultMeta.inviteTokens,
+      ...storedTokens,
+    };
+    vaultMeta.inviteTokens = mergedTokens;
+
+    try {
+      localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(mergedTokens));
+    } catch (_error) {
+      // The encrypted vault still keeps the important league token copy.
+    }
+
+    return mergedTokens;
+  }
+
+  function restoreLeagueStateFromVault() {
+    if (!state.unlocked || !state.data) {
+      return;
+    }
+
+    const vaultMeta = ensureLeagueDataContainer();
+    const mergedTokens = mergeStoredLeagueInvitesWithVault();
+    const storedActiveLeagueId = readStoredActiveLeagueId();
+    const activeLeagueId = vaultMeta.activeLeagueId || storedActiveLeagueId || "";
+
+    if (activeLeagueId) {
+      state.league.activeLeagueId = activeLeagueId;
+      try {
+        localStorage.setItem(LEAGUE_ACTIVE_KEY, activeLeagueId);
+      } catch (_error) {
+        // Active league can still be held in memory for the current session.
+      }
+    }
+
+    if (activeLeagueId && mergedTokens[activeLeagueId]) {
+      state.league.inviteToken = mergedTokens[activeLeagueId];
+    }
+  }
+
+  function rememberLeagueAccountBinding(session) {
+    if (!state.unlocked || !session || !session.user) {
+      return;
+    }
+
+    const vaultMeta = ensureLeagueDataContainer();
+    vaultMeta.authUserId = sanitizePlainText(session.user.id, 80);
+    vaultMeta.authEmail = normalizeEmailAddress(session.user.email || vaultMeta.authEmail || "");
+    vaultMeta.updatedAt = new Date().toISOString();
+  }
+
+  async function persistLeagueAccountMeta(options = {}) {
+    if (!state.unlocked || !state.session || !state.session.cryptoKey) {
+      return;
+    }
+
+    try {
+      ensureLeagueDataContainer();
+      await persistVault();
+    } catch (error) {
+      if (options.announce !== false) {
+        showStatus(error.message || "Liga działa, ale nie udało się zapisać jej wyboru w zaszyfrowanym koncie.", true);
+      }
+    }
+  }
+
+  function resetLeagueRemoteStateForAuthSwitch() {
+    stopLeagueRealtime();
+    state.league.profile = null;
+    state.league.leagues = [];
+    clearLeagueActiveData();
+    restoreLeagueStateFromVault();
+  }
+
+  async function adoptAccountSessionForLeague() {
+    const config = getActiveVerifiedEmailRecoveryConfig();
+    if (!config) {
+      return null;
+    }
+
+    const session = await getStoredEmailRecoverySession(config.email);
+    if (!session || !session.user || session.user.id !== config.supabaseUserId) {
+      throw new Error("Liga jest przypisana do zweryfikowanego konta email. Wyślij kod w ustawieniach logowania, potwierdź konto i spróbuj ponownie.");
+    }
+
+    const accountClient = ensureEmailRecoveryClient();
+    if (state.league.client !== accountClient || state.league.authMode !== "account") {
+      state.league.client = accountClient;
+      state.league.authMode = "account";
+      state.league.configured = true;
+      state.league.error = "";
+      state.league.session = session;
+      resetLeagueRemoteStateForAuthSwitch();
+    } else {
+      state.league.session = session;
+    }
+
+    rememberLeagueAccountBinding(session);
+    return session;
+  }
+
+  async function restoreLeagueMembershipFromVaultInvite() {
+    if (!state.unlocked || !state.league.client || state.league.authMode !== "account") {
+      return false;
+    }
+
+    restoreLeagueStateFromVault();
+    const vaultMeta = ensureLeagueDataContainer();
+    const tokens = mergeStoredLeagueInvitesWithVault();
+    const activeLeagueId = vaultMeta.activeLeagueId || state.league.activeLeagueId || readStoredActiveLeagueId();
+    const token = activeLeagueId ? tokens[activeLeagueId] : "";
+    if (!activeLeagueId || !token) {
+      return false;
+    }
+
+    try {
+      const { data, error } = await state.league.client.rpc("join_league", { p_invite_token: token });
+      if (error) {
+        return false;
+      }
+      const result = Array.isArray(data) ? data[0] : data;
+      if (!result || !result.league_id) {
+        return false;
+      }
+      storeActiveLeagueId(result.league_id);
+      storeLeagueInviteToken(result.league_id, token);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function readStoredActiveLeagueId() {
     try {
       return sanitizePlainText(localStorage.getItem(LEAGUE_ACTIVE_KEY) || "", 80);
@@ -5143,6 +5327,11 @@
 
   function storeActiveLeagueId(leagueId) {
     state.league.activeLeagueId = leagueId || "";
+    if (state.unlocked && state.data) {
+      const vaultMeta = ensureLeagueDataContainer();
+      vaultMeta.activeLeagueId = state.league.activeLeagueId;
+      vaultMeta.updatedAt = new Date().toISOString();
+    }
     try {
       if (state.league.activeLeagueId) {
         localStorage.setItem(LEAGUE_ACTIVE_KEY, state.league.activeLeagueId);
@@ -5169,6 +5358,11 @@
     }
     const tokens = readStoredLeagueInvites();
     tokens[leagueId] = token;
+    if (state.unlocked && state.data) {
+      const vaultMeta = ensureLeagueDataContainer();
+      vaultMeta.inviteTokens[leagueId] = token;
+      vaultMeta.updatedAt = new Date().toISOString();
+    }
     try {
       localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(tokens));
     } catch (_error) {
@@ -5182,6 +5376,11 @@
   function clearStoredLeagueInvite(leagueId) {
     const tokens = readStoredLeagueInvites();
     delete tokens[leagueId];
+    if (state.unlocked && state.data) {
+      const vaultMeta = ensureLeagueDataContainer();
+      delete vaultMeta.inviteTokens[leagueId];
+      vaultMeta.updatedAt = new Date().toISOString();
+    }
     try {
       localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(tokens));
     } catch (_error) {
@@ -5193,6 +5392,17 @@
   }
 
   async function ensureLeagueSession() {
+    const accountSession = await adoptAccountSessionForLeague();
+    if (accountSession) {
+      return accountSession;
+    }
+
+    if (state.league.authMode === "account") {
+      state.league.client = null;
+      state.league.session = null;
+      state.league.authMode = "";
+    }
+
     if (!state.league.client && !initializeLeagueClient()) {
       throw new Error(state.league.error || "Liga nie ma aktywnego połączenia z Supabase.");
     }
@@ -5203,6 +5413,7 @@
     }
 
     if (sessionData && sessionData.session) {
+      state.league.authMode = "anonymous";
       state.league.session = sessionData.session;
       return sessionData.session;
     }
@@ -5215,6 +5426,7 @@
       throw new Error("Supabase nie utworzył anonimowej sesji Ligi.");
     }
 
+    state.league.authMode = "anonymous";
     state.league.session = data.session;
     return data.session;
   }
@@ -5241,6 +5453,8 @@
       try {
         await ensureLeagueSession();
         await loadOrCreateLeagueProfile();
+        restoreLeagueStateFromVault();
+        await restoreLeagueMembershipFromVaultInvite();
         await loadLeagueList();
         if (state.league.activeLeagueId) {
           await loadActiveLeagueData();
@@ -5388,7 +5602,8 @@
     if (!activeExists) {
       storeActiveLeagueId(state.league.leagues[0].id);
     }
-    state.league.inviteToken = readStoredLeagueInvites()[state.league.activeLeagueId] || "";
+    const inviteTokens = state.unlocked && state.data ? mergeStoredLeagueInvitesWithVault() : readStoredLeagueInvites();
+    state.league.inviteToken = inviteTokens[state.league.activeLeagueId] || "";
     renderLeaguePanel();
     return state.league.leagues;
   }
@@ -5482,7 +5697,8 @@
     state.league.prEvents = prEvents;
     state.league.currentSnapshot = state.league.leaderboard.find((row) => row.user_id === state.league.session.user.id) || null;
     state.league.lastSyncAt = state.league.currentSnapshot ? state.league.currentSnapshot.synced_at : "";
-    state.league.inviteToken = readStoredLeagueInvites()[league.id] || "";
+    const inviteTokens = state.unlocked && state.data ? mergeStoredLeagueInvitesWithVault() : readStoredLeagueInvites();
+    state.league.inviteToken = inviteTokens[league.id] || "";
     renderLeaguePanel();
   }
 
@@ -5506,6 +5722,7 @@
     state.league.syncTimer = 0;
     state.league.leagues = [];
     state.league.profile = null;
+    state.league.session = null;
     state.league.error = "";
     state.league.loading = false;
     clearLeagueActiveData();
@@ -6477,6 +6694,7 @@
       await loadLeagueList();
       await publishLeagueData({ skipEnsure: true, force: true, announce: false });
       subscribeToActiveLeague();
+      await persistLeagueAccountMeta({ announce: false });
       showStatus("Liga została utworzona. Jeden kod zaproszenia jest gotowy dla całej ekipy.");
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się utworzyć Ligi.");
@@ -6506,11 +6724,13 @@
       const result = Array.isArray(data) ? data[0] : data;
       if (!result || !result.league_id) throw new Error("Supabase nie potwierdził dołączenia do ligi.");
       storeActiveLeagueId(result.league_id);
+      storeLeagueInviteToken(result.league_id, token);
       state.league.pendingInviteToken = "";
       elements.leagueInviteInput.value = "";
       await loadLeagueList();
       await publishLeagueData({ skipEnsure: true, force: true, announce: false });
       subscribeToActiveLeague();
+      await persistLeagueAccountMeta({ announce: false });
       showStatus(`Dołączono do ligi „${result.league_name || "BeTheOne"}”.`);
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się dołączyć do Ligi.");
@@ -6526,7 +6746,8 @@
     if (!leagueId || leagueId === state.league.activeLeagueId) return;
     storeActiveLeagueId(leagueId);
     clearLeagueActiveData();
-    state.league.inviteToken = readStoredLeagueInvites()[leagueId] || "";
+    const inviteTokens = state.unlocked && state.data ? mergeStoredLeagueInvitesWithVault() : readStoredLeagueInvites();
+    state.league.inviteToken = inviteTokens[leagueId] || "";
     try {
       state.league.error = "";
       state.league.loading = true;
@@ -6534,6 +6755,7 @@
       await loadActiveLeagueData();
       await publishLeagueData({ skipEnsure: true, force: false, announce: false });
       subscribeToActiveLeague();
+      await persistLeagueAccountMeta({ announce: false });
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się przełączyć Ligi.");
       showStatus(state.league.error, true);
@@ -6578,6 +6800,7 @@
       const token = sanitizeLeagueInviteToken(data);
       if (!token) throw new Error("Supabase nie zwrócił nowego kodu zaproszenia.");
       storeLeagueInviteToken(league.id, token);
+      await persistLeagueAccountMeta({ announce: false });
       showStatus("Wygenerowano nowy wspólny kod Ligi. Poprzedni kod jest nieważny.");
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się wygenerować nowego kodu.");
@@ -6758,6 +6981,7 @@
       storeActiveLeagueId("");
       clearLeagueActiveData();
       await loadLeagueList();
+      await persistLeagueAccountMeta({ announce: false });
       showStatus("Opuszczono Ligę.");
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się opuścić Ligi.");
@@ -6781,6 +7005,7 @@
       storeActiveLeagueId("");
       clearLeagueActiveData();
       await loadLeagueList();
+      await persistLeagueAccountMeta({ announce: false });
       showStatus("Liga została usunięta.");
     } catch (error) {
       state.league.error = formatLeagueError(error, "Nie udało się usuńąć Ligi.");
@@ -7621,6 +7846,7 @@
     state.unlocked = true;
     state.session = options.session;
     state.data = normalizeData(migration.data);
+    restoreLeagueStateFromVault();
     state.activeTab = "dashboard";
 
     clearPassphraseFields();
@@ -23055,6 +23281,11 @@ function calculateConsistency(entries, weeklyTarget, workouts) {
       notes.push("Dodano kolory checklisty dnia.");
     }
 
+    if (fromVersion < 3) {
+      next.league = normalizeLeagueAccountData(next.league);
+      notes.push("Dodano synchronizację Ligi BeTheOne z kontem email.");
+    }
+
     next.schemaVersion = Math.max(fromVersion, DATA_SCHEMA_VERSION);
     next.appVersion = APP_VERSION;
 
@@ -23117,6 +23348,7 @@ function calculateConsistency(entries, weeklyTarget, workouts) {
       customGoals: customGoals.map(normalizeCustomGoal).filter(Boolean).slice(-80),
       habits: normalizedHabits,
       habitCompletions: normalizeHabitCompletions(source.habitCompletions, normalizedHabits),
+      league: normalizeLeagueAccountData(source.league),
     };
   }
 
@@ -24784,6 +25016,7 @@ function buildWorkoutIdentityKey(workout) {
       customGoals: [],
       habits: buildDefaultHabits(),
       habitCompletions: {},
+      league: normalizeLeagueAccountData(null),
     };
   }
 
