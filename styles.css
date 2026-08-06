@@ -2818,9 +2818,11 @@ canvas {
 }
 
 .hint-trigger:hover .hint-bubble,
-.hint-trigger:focus-within .hint-bubble {
+.hint-trigger:focus-within .hint-bubble,
+.hint-trigger.is-open .hint-bubble {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 
 .hint-trigger.hint-align-right .hint-bubble {
@@ -4804,6 +4806,60 @@ canvas {
   .chart-header .hint-trigger {
     flex: 0 0 auto;
     margin-left: 0.2rem;
+  }
+
+  .hint-trigger {
+    position: relative;
+  }
+
+  .hint-bubble,
+  .hint-trigger.hint-align-right .hint-bubble,
+  .hint-trigger.hint-align-left .hint-bubble {
+    position: fixed;
+    top: var(--hint-mobile-top, 0.7rem);
+    right: auto;
+    bottom: auto;
+    left: var(--hint-mobile-left, 0.7rem);
+    width: var(--hint-mobile-width, min(17.5rem, calc(100vw - 1.1rem)));
+    max-height: min(42vh, 18rem);
+    overflow-y: auto;
+    transform: translateY(-0.35rem);
+    z-index: 2400;
+  }
+
+  .hint-trigger.hint-align-right .hint-bubble {
+    left: var(--hint-mobile-left, 0.7rem);
+    right: auto;
+  }
+
+  .hint-bubble::before,
+  .hint-trigger.hint-align-right .hint-bubble::before,
+  .hint-trigger.hint-align-left .hint-bubble::before {
+    display: block;
+    top: -0.38rem;
+  }
+
+  .hint-trigger.hint-align-right .hint-bubble::before {
+    left: 0.7rem;
+    right: auto;
+  }
+
+  .hint-trigger.hint-align-left .hint-bubble::before,
+  .hint-bubble::before {
+    right: 0.7rem;
+    left: auto;
+  }
+
+  .hint-trigger.hint-open-above .hint-bubble::before {
+    top: auto;
+    bottom: -0.38rem;
+    transform: rotate(225deg);
+  }
+
+  .hint-trigger.is-open .hint-bubble,
+  .hint-trigger:hover .hint-bubble,
+  .hint-trigger:focus-within .hint-bubble {
+    transform: translateY(0);
   }
 
   .hint-icon {

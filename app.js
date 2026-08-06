@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.06.2";
+  const APP_VERSION = "2026.08.06.3";
   const DATA_SCHEMA_VERSION = 2;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -125,7 +125,7 @@
     running: { label: "Bieganie", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 35, defaultIntensityRpe: 6.5, defaultSpeedKmh: 9, referenceSpeedKmh: 9, baseMet: 8.8, minMet: 7, maxMet: 13, kcalPerKgKm: 1.03, elevationKcalPer100m: 1.6, speedMetFactor: 0.32, elevationMetBoost: 0.35 },
     running_drills: { label: "Technika biegu / skipy", category: "lekkoatletyka i technika biegu", loadMode: "cardio", defaultSets: 4, defaultReps: 1, defaultDurationMin: 14, defaultIntensityRpe: 5.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 5.8, minMet: 4.2, maxMet: 8.2, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     running_strides: { label: "Przebieżki / rytmy", category: "lekkoatletyka i szybkość", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 14, defaultIntensityRpe: 7, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 8.4, minMet: 6.2, maxMet: 11.5, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
-    sprint: { label: "Sprinty krótkie", category: "lekkoatletyka i móc", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 18, defaultIntensityRpe: 8.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 10.2, minMet: 7.5, maxMet: 14.5, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    sprint: { label: "Sprinty krótkie", category: "lekkoatletyka i moc", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 18, defaultIntensityRpe: 8.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 10.2, minMet: 7.5, maxMet: 14.5, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     hill_sprint: { label: "Podbiegi / siła biegowa", category: "lekkoatletyka i siła biegowa", loadMode: "cardio", defaultSets: 8, defaultReps: 1, defaultDurationMin: 18, defaultIntensityRpe: 8.2, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 10.8, minMet: 7.2, maxMet: 15, kcalPerKgKm: null, elevationKcalPer100m: 1.9, speedMetFactor: 0, elevationMetBoost: 0.45 },
     interval_run: { label: "Interwały biegowe", category: "lekkoatletyka i VO2max", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 32, defaultIntensityRpe: 8, defaultSpeedKmh: 11.5, referenceSpeedKmh: 11.5, baseMet: 10.6, minMet: 7.2, maxMet: 14.2, kcalPerKgKm: 1.05, elevationKcalPer100m: 1.4, speedMetFactor: 0.28, elevationMetBoost: 0.28 },
     tempo_run: { label: "Bieg tempowy / progowy", category: "lekkoatletyka i próg", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 35, defaultIntensityRpe: 7.5, defaultSpeedKmh: 10.5, referenceSpeedKmh: 10.5, baseMet: 9.8, minMet: 7, maxMet: 13.8, kcalPerKgKm: 1.04, elevationKcalPer100m: 1.4, speedMetFactor: 0.3, elevationMetBoost: 0.3 },
@@ -137,6 +137,13 @@
     rowing: { label: "Wioślarz", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 25, defaultIntensityRpe: 6.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 6.8, minMet: 5, maxMet: 10, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     hiking: { label: "Hiking / trekking", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 60, defaultIntensityRpe: 6, defaultSpeedKmh: 5.2, referenceSpeedKmh: 5.2, baseMet: 6.4, minMet: 5, maxMet: 9.5, kcalPerKgKm: 0.72, elevationKcalPer100m: 1.9, speedMetFactor: 0.16, elevationMetBoost: 0.38 },
     swimming: { label: "Pływanie", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 30, defaultIntensityRpe: 7, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 7.4, minMet: 5.5, maxMet: 11, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    swim_drills: { label: "Technika pływania", category: "pływanie i technika", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 24, defaultIntensityRpe: 5.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 5.8, minMet: 4.2, maxMet: 8.2, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    swim_intervals: { label: "Interwały pływackie", category: "pływanie i wydolność", loadMode: "cardio", defaultSets: 8, defaultReps: 1, defaultDurationMin: 32, defaultIntensityRpe: 8, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 9.2, minMet: 6.8, maxMet: 12.5, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    cycling_intervals: { label: "Interwały rowerowe", category: "rower i wydolność", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 36, defaultIntensityRpe: 7.8, defaultSpeedKmh: 24, referenceSpeedKmh: 24, baseMet: 9.1, minMet: 6.5, maxMet: 13.5, kcalPerKgKm: 0.34, elevationKcalPer100m: 0.9, speedMetFactor: 0.18, elevationMetBoost: 0.12 },
+    boxing: { label: "Boks / worek", category: "sporty walki i kondycja", loadMode: "cardio", defaultSets: 6, defaultReps: 1, defaultDurationMin: 24, defaultIntensityRpe: 7.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 8.2, minMet: 5.8, maxMet: 12.2, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    martial_arts: { label: "Sztuki walki", category: "sporty walki i technika", loadMode: "cardio", defaultSets: 5, defaultReps: 1, defaultDurationMin: 35, defaultIntensityRpe: 7, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 7.6, minMet: 5.2, maxMet: 11.8, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    agility: { label: "Zwinność / koordynacja", category: "atletyka i koordynacja", loadMode: "cardio", defaultSets: 5, defaultReps: 1, defaultDurationMin: 20, defaultIntensityRpe: 6.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 6.4, minMet: 4.8, maxMet: 9.8, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
+    racket_sport: { label: "Sport rakietowy", category: "sport i zwinność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 50, defaultIntensityRpe: 6.8, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 7.3, minMet: 5.4, maxMet: 10.8, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     hiit: { label: "Interwały / HIIT", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 1, defaultReps: 1, defaultDurationMin: 20, defaultIntensityRpe: 8, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 8.9, minMet: 6.8, maxMet: 12.5, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     conditioning_circuit: { label: "Obwód / conditioning", category: "cardio i wydolność", loadMode: "cardio", defaultSets: 3, defaultReps: 12, defaultDurationMin: 24, defaultIntensityRpe: 7.5, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 6.9, minMet: 5.2, maxMet: 10.2, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
     crossfit: { label: "Crossfit / metcon", category: "crossfit i wydolność", loadMode: "cardio", defaultSets: 4, defaultReps: 12, defaultDurationMin: 24, defaultIntensityRpe: 8, defaultSpeedKmh: null, referenceSpeedKmh: null, baseMet: 8.7, minMet: 6.5, maxMet: 12.8, kcalPerKgKm: null, elevationKcalPer100m: 0, speedMetFactor: 0, elevationMetBoost: 0 },
@@ -147,7 +154,7 @@
   });
   const ACTIVITY_PROFILE_VALUES = Object.keys(ACTIVITY_PROFILE_META);
   const RUNNING_ATHLETIC_PROFILES = new Set(["running", "running_drills", "running_strides", "sprint", "hill_sprint", "interval_run", "tempo_run", "fartlek"]);
-  const CARDIO_MACHINE_PROFILES = new Set(["cycling", "elliptical", "rowing", "swimming", "team_sport"]);
+  const CARDIO_MACHINE_PROFILES = new Set(["cycling", "cycling_intervals", "elliptical", "rowing", "swimming", "swim_drills", "swim_intervals", "boxing", "martial_arts", "agility", "racket_sport", "team_sport"]);
   const RUNNING_HARD_PROFILES = new Set(["sprint", "hill_sprint", "interval_run", "tempo_run"]);
   const AVATAR_TAB_IDS = ["identity", "species", "outfits", "effects"];
   const AVATAR_SPECIES_VALUES = ["panda", "tiger", "wolf", "dragon"];
@@ -200,6 +207,22 @@
     ".login-install-card",
     ".login-account-sync-card",
   ].join(",");
+  const HELP_BLOCK_SELECTOR = [
+    ".planner-block",
+    ".template-builder-card",
+    ".league-card",
+    ".league-block",
+    ".monthly-habit-panel",
+    ".coach-report-block",
+    ".avatar-preview-card",
+    ".avatar-store-panel",
+    ".sync-card",
+    ".filter-toolbar",
+    ".login-install-card",
+    ".login-account-sync-card",
+    ".template-execution-block",
+    ".panel",
+  ].join(",");
   const UI_SCALE_OPTIONS = [
     { value: "compact", label: "Kompaktowy" },
     { value: "medium", label: "Średni" },
@@ -251,6 +274,7 @@
     uiScale: getInitialUiScale(),
     mobileLayoutObserver: null,
     mobileLayoutUpdateTimer: 0,
+    hintInteractionsReady: false,
     entryPhotoDrafts: [],
     bannerTimeout: null,
     autoLockTimeout: null,
@@ -731,6 +755,7 @@
     bindEvents();
     updateInstallAppUi();
     enhanceInlineHelp();
+    initializeHintInteractions();
     populateExerciseSuggestions();
     renderHabitWeekdayPicker();
     renderTrainingGeneratorState();
@@ -3307,7 +3332,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Objaśnienie pola");
+      const trigger = createHelpTrigger(text, "Objaśnienie pola", 1);
       const field = hint.closest(".field");
       const label = field ? field.querySelector("span") : null;
 
@@ -3327,7 +3352,7 @@
       const text = sanitizePlainText(hint.textContent, 320);
       const title = hint.parentElement ? hint.parentElement.querySelector("strong") : null;
       if (text && title) {
-        title.appendChild(createHelpTrigger(text, "Opis sekcji formularza"));
+        title.appendChild(createHelpTrigger(text, "Opis sekcji formularza", 2));
       }
       hint.remove();
     });
@@ -3342,7 +3367,7 @@
       const heading = hint.previousElementSibling;
       const title = heading ? heading.querySelector("h2") : null;
       if (title) {
-        title.appendChild(createHelpTrigger(text, "Wprowadzenie do sekcji"));
+        title.appendChild(createHelpTrigger(text, "Wprowadzenie do sekcji", 4));
       }
       hint.remove();
     });
@@ -3354,7 +3379,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Objaśnienie sekcji");
+      const trigger = createHelpTrigger(text, "Objaśnienie sekcji", 4);
       if (attachHelpTriggerToNearestHeading(hint, trigger)) {
         hint.remove();
         return;
@@ -3377,7 +3402,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Dodatkowa informacja");
+      const trigger = createHelpTrigger(text, "Dodatkowa informacja", 3);
       if (attachHelpTriggerToNearestHeading(hint, trigger)) {
         hint.remove();
         return;
@@ -3388,6 +3413,59 @@
       row.appendChild(trigger);
       hint.replaceWith(row);
     });
+
+    pruneHelpTriggersPerBlock();
+  }
+
+  function pruneHelpTriggersPerBlock() {
+    const triggers = Array.from(document.querySelectorAll(".hint-trigger"));
+    const groups = new Map();
+
+    triggers.forEach((trigger) => {
+      const block = trigger.closest(HELP_BLOCK_SELECTOR);
+      if (!block) {
+        return;
+      }
+      if (!groups.has(block)) {
+        groups.set(block, []);
+      }
+      groups.get(block).push(trigger);
+    });
+
+    groups.forEach((items, block) => {
+      const directItems = items.filter((trigger) => trigger.closest(HELP_BLOCK_SELECTOR) === block);
+      if (directItems.length <= 1) {
+        return;
+      }
+
+      directItems.sort((first, second) => {
+        const firstPriority = Number(first.dataset.helpPriority || 0);
+        const secondPriority = Number(second.dataset.helpPriority || 0);
+        const firstHeading = first.closest(".panel-heading, .subpanel-heading, .chart-header, .compact-heading") ? 1 : 0;
+        const secondHeading = second.closest(".panel-heading, .subpanel-heading, .chart-header, .compact-heading") ? 1 : 0;
+        return secondPriority - firstPriority || secondHeading - firstHeading;
+      });
+
+      const keep = directItems[0];
+      const headingTitle = getHelpHeadingTitleForBlock(block);
+      if (headingTitle && !headingTitle.contains(keep)) {
+        headingTitle.appendChild(keep);
+      }
+
+      directItems.slice(1).forEach((trigger) => {
+        const parent = trigger.parentElement;
+        trigger.remove();
+        if (parent && parent.classList.contains("hint-floating-row") && !parent.children.length) {
+          parent.remove();
+        }
+      });
+    });
+  }
+
+  function getHelpHeadingTitleForBlock(block) {
+    return block.querySelector(
+      ".panel-heading h2, .panel-heading h3, .subpanel-heading h2, .subpanel-heading h3, .compact-heading h3, .chart-header h3, h2, h3, strong"
+    );
   }
 
   function attachHelpTriggerToNearestHeading(sourceNode, trigger) {
@@ -3424,9 +3502,10 @@
     return false;
   }
 
-  function createHelpTrigger(text, ariaLabel) {
+  function createHelpTrigger(text, ariaLabel, priority = 1) {
     const trigger = document.createElement("span");
     trigger.className = "hint-trigger";
+    trigger.dataset.helpPriority = String(priority);
 
     const icon = document.createElement("button");
     icon.type = "button";
@@ -3443,6 +3522,59 @@
     return trigger;
   }
 
+  function initializeHintInteractions() {
+    if (state.hintInteractionsReady) {
+      return;
+    }
+
+    state.hintInteractionsReady = true;
+    document.addEventListener("click", handleHintInteractionClick);
+    document.addEventListener("keydown", handleHintInteractionKeydown);
+  }
+
+  function handleHintInteractionClick(event) {
+    const target = event.target && event.target.closest
+      ? event.target
+      : event.target && event.target.parentElement;
+    const trigger = target ? target.closest(".hint-trigger") : null;
+    const icon = target ? target.closest(".hint-icon") : null;
+
+    if (trigger && icon) {
+      event.preventDefault();
+      const shouldOpen = !trigger.classList.contains("is-open");
+      closeOpenHintTriggers(trigger);
+      trigger.classList.toggle("is-open", shouldOpen);
+      if (!shouldOpen && typeof icon.blur === "function") {
+        icon.blur();
+      }
+      updateHintPlacements();
+      return;
+    }
+
+    if (!trigger) {
+      closeOpenHintTriggers();
+    }
+  }
+
+  function handleHintInteractionKeydown(event) {
+    if (event.key === "Escape") {
+      closeOpenHintTriggers();
+    }
+  }
+
+  function closeOpenHintTriggers(exceptTrigger) {
+    document.querySelectorAll(".hint-trigger.is-open").forEach((trigger) => {
+      if (trigger === exceptTrigger) {
+        return;
+      }
+      trigger.classList.remove("is-open");
+      const icon = trigger.querySelector(".hint-icon");
+      if (icon && document.activeElement === icon && typeof icon.blur === "function") {
+        icon.blur();
+      }
+    });
+  }
+
   function updateHintPlacements() {
     const midpoint = window.innerWidth / 2;
 
@@ -3455,6 +3587,29 @@
       const openRight = rect.left + rect.width / 2 < midpoint;
       trigger.classList.toggle("hint-align-right", openRight);
       trigger.classList.toggle("hint-align-left", !openRight);
+
+      if (isMobileViewport()) {
+        const padding = 10;
+        const width = Math.min(288, Math.max(180, window.innerWidth - padding * 2));
+        const leftTarget = openRight ? rect.left : rect.right - width;
+        const left = clamp(leftTarget, padding, Math.max(padding, window.innerWidth - width - padding));
+        const maxHeight = Math.min(window.innerHeight * 0.42, 288);
+        const belowTop = rect.bottom + 8;
+        const aboveTop = rect.top - maxHeight - 8;
+        const openAbove = belowTop + maxHeight > window.innerHeight - padding && aboveTop > padding;
+        const topTarget = openAbove ? aboveTop : belowTop;
+        const top = clamp(topTarget, padding, Math.max(padding, window.innerHeight - maxHeight - padding));
+
+        trigger.style.setProperty("--hint-mobile-left", `${Math.round(left)}px`);
+        trigger.style.setProperty("--hint-mobile-top", `${Math.round(top)}px`);
+        trigger.style.setProperty("--hint-mobile-width", `${Math.round(width)}px`);
+        trigger.classList.toggle("hint-open-above", openAbove);
+      } else {
+        trigger.style.removeProperty("--hint-mobile-left");
+        trigger.style.removeProperty("--hint-mobile-top");
+        trigger.style.removeProperty("--hint-mobile-width");
+        trigger.classList.remove("hint-open-above");
+      }
     });
   }
 
@@ -3838,7 +3993,7 @@
           "Sprinty lotne",
           "Sprinty na bieżni mechanicznej",
           "Sprinty z pełnym odpoczynkiem"
-        ], { category: "lekkoatletyka i móc", loadMode: "cardio", activityProfile: "sprint", defaultSets: 6, defaultReps: 1, defaultDurationMin: 18, defaultIntensityRpe: 8.5 }),
+        ], { category: "lekkoatletyka i moc", loadMode: "cardio", activityProfile: "sprint", defaultSets: 6, defaultReps: 1, defaultDurationMin: 18, defaultIntensityRpe: 8.5 }),
         createExerciseTemplates([
           "Podbiegi 8x12 s",
           "Podbiegi 10x10 s",
@@ -3890,8 +4045,22 @@
           "Rower szosowy",
           "Rower stacjonarny",
           "Spinning",
-          "Air bike"
+          "Air bike",
+          "Rower gravel",
+          "Rower MTB",
+          "Rower tempo 20 min",
+          "Rower regeneracyjny"
         ], { category: "cardio i wydolność", loadMode: "cardio", activityProfile: "cycling", defaultSets: 1, defaultReps: 1, defaultDurationMin: 45, defaultIntensityRpe: 6 }),
+        createExerciseTemplates([
+          "Rower interwały 10x1 min",
+          "Rower interwały 6x3 min",
+          "Rower 4x4 min",
+          "Rower podjazdy",
+          "Rower kadencja 100 rpm",
+          "Spinning interwały",
+          "Air bike interwały",
+          "Rower sprinty 12x20 s"
+        ], { category: "rower i wydolność", loadMode: "cardio", activityProfile: "cycling_intervals", defaultSets: 6, defaultReps: 1, defaultDurationMin: 36, defaultIntensityRpe: 7.8 }),
         createExerciseTemplates([
           "Orbitrek",
           "Cross trainer"
@@ -3907,8 +4076,91 @@
         ], { category: "cardio i wydolność", loadMode: "cardio", activityProfile: "hiking", defaultSets: 1, defaultReps: 1, defaultDurationMin: 60, defaultIntensityRpe: 6 }),
         createExerciseTemplates([
           "Pływanie",
-          "Basen"
+          "Basen",
+          "Pływanie kraulem",
+          "Pływanie grzbietem",
+          "Pływanie żabką",
+          "Pływanie motylkiem",
+          "Pływanie ciągłe Z2",
+          "Pływanie open water",
+          "Pływanie regeneracyjne"
         ], { category: "cardio i wydolność", loadMode: "cardio", activityProfile: "swimming", defaultSets: 1, defaultReps: 1, defaultDurationMin: 30, defaultIntensityRpe: 7 }),
+        createExerciseTemplates([
+          "Deska pływacka - nogi kraul",
+          "Pull buoy - ręce kraul",
+          "Ćwiczenie catch-up",
+          "Jednorącz kraul",
+          "Oddech co 3 ruchy",
+          "Sculling",
+          "Nawroty techniczne",
+          "Praca nóg grzbiet",
+          "Technika żabki",
+          "Dolphin kick",
+          "Pływanie techniczne 8x50 m",
+          "Ćwiczenie wysokiego łokcia"
+        ], { category: "pływanie i technika", loadMode: "cardio", activityProfile: "swim_drills", defaultSets: 6, defaultReps: 1, defaultDurationMin: 24, defaultIntensityRpe: 5.5 }),
+        createExerciseTemplates([
+          "Pływanie 10x50 m",
+          "Pływanie 8x100 m",
+          "Pływanie 4x200 m",
+          "Sprint pływacki 12x25 m",
+          "Interwały progowe 6x100 m",
+          "Piramida pływacka 50-100-150-100-50",
+          "Pływanie 20x25 m technicznie szybko",
+          "Pływanie 5x200 m tempo"
+        ], { category: "pływanie i wydolność", loadMode: "cardio", activityProfile: "swim_intervals", defaultSets: 8, defaultReps: 1, defaultDurationMin: 32, defaultIntensityRpe: 8 }),
+        createExerciseTemplates([
+          "Boks - worek ciężki",
+          "Boks - shadow boxing",
+          "Boks - tarcze",
+          "Boks - skakanka rundy",
+          "Boks - praca nóg",
+          "Boks - kombinacje 1-2",
+          "Boks - slip rope",
+          "Boks - defensywa",
+          "Boks - rundy techniczne",
+          "Boks - interwały na worku",
+          "Boks - double-end bag",
+          "Boks - szybkość ciosów"
+        ], { category: "sporty walki i kondycja", loadMode: "cardio", activityProfile: "boxing", defaultSets: 6, defaultReps: 1, defaultDurationMin: 24, defaultIntensityRpe: 7.5 }),
+        createExerciseTemplates([
+          "Kickboxing - kombinacje",
+          "Muay Thai - low kick",
+          "Muay Thai - kolana na tarczy",
+          "MMA - sprawle",
+          "Zapasy - wejścia w nogi",
+          "Judo - uchikomi",
+          "BJJ - drill przejścia gardy",
+          "Grappling - mosty i shrimping",
+          "Karate - kihon",
+          "Taekwondo - kopnięcia techniczne",
+          "Sanda - praca na dystansie",
+          "Samoobrona - drill reakcji"
+        ], { category: "sporty walki i technika", loadMode: "cardio", activityProfile: "martial_arts", defaultSets: 5, defaultReps: 1, defaultDurationMin: 35, defaultIntensityRpe: 7 }),
+        createExerciseTemplates([
+          "Shuttle run 5-10-5",
+          "T-test agility",
+          "Drabinka - in-in-out-out",
+          "Drabinka - lateral shuffle",
+          "Cone drills",
+          "Zmiana kierunku 45 stopni",
+          "Zmiana kierunku 90 stopni",
+          "Hamowanie i start",
+          "Reakcja na sygnał",
+          "Carioca",
+          "Lateral bounds",
+          "Sprint z reakcją na sygnał"
+        ], { category: "atletyka i koordynacja", loadMode: "cardio", activityProfile: "agility", defaultSets: 5, defaultReps: 1, defaultDurationMin: 20, defaultIntensityRpe: 6.5 }),
+        createExerciseTemplates([
+          "Tenis - wymiany",
+          "Tenis - praca nóg",
+          "Badminton - footwork",
+          "Squash",
+          "Padel",
+          "Tenis stołowy - footwork",
+          "Pickleball",
+          "Badminton - interwały kortowe"
+        ], { category: "sport i zwinność", loadMode: "cardio", activityProfile: "racket_sport", defaultSets: 1, defaultReps: 1, defaultDurationMin: 50, defaultIntensityRpe: 6.8 }),
         createExerciseTemplates([
           "HIIT",
           "Tabata",
@@ -3947,7 +4199,18 @@
           "Koszykówka",
           "Piłka nożna",
           "Badminton",
-          "Tenis"
+          "Tenis",
+          "Piłka nożna - małe gry",
+          "Koszykówka - pickup game",
+          "Siatkówka",
+          "Piłka ręczna",
+          "Futsal",
+          "Unihokej",
+          "Rugby touch",
+          "Ultimate frisbee",
+          "Hokej",
+          "Lacrosse",
+          "Sport zespołowy - mecz"
         ], { category: "cardio i wydolność", loadMode: "cardio", activityProfile: "team_sport", defaultSets: 1, defaultReps: 1, defaultDurationMin: 60, defaultIntensityRpe: 6.5 })
       );
   }
@@ -3998,6 +4261,14 @@
   function inferExerciseMeta(exerciseName, normalizedName) {
     if (!normalizedName) {
       return null;
+    }
+
+    if (/(agility|shuttle|t-test|drabinka.*lateral|lateral shuffle|cone drill|zmiana kierunku|hamowanie i start|reakcja na sygna|carioca|lateral bound)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("agility"),
+        activityProfile: "agility",
+        inferred: true,
+      });
     }
 
     if (/(skip|wieloskok|ankling|koordynac|drabink|płotk|plotk|defilad|praca ramion|wysokim kolanem|technika biegu)/.test(normalizedName)) {
@@ -4080,6 +4351,14 @@
       });
     }
 
+    if (/(rower.*interwa|interwa.*rower|rower 4x4|rower.*podjazd|podjazd.*rower|kadencj|spinning interwa|air bike interwa|rower sprint)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("cycling_intervals"),
+        activityProfile: "cycling_intervals",
+        inferred: true,
+      });
+    }
+
     if (/(rower|bike|cycling|spinning|air bike)/.test(normalizedName)) {
       return buildGenericExerciseMeta(exerciseName, {
         ...getActivityProfileMeta("cycling"),
@@ -4112,10 +4391,58 @@
       });
     }
 
+    if (/(pływ.*interwa|plyw.*interwa|interwa.*pływ|interwa.*plyw|pływanie 10x50|plywanie 10x50|8x100|4x200|12x25|6x100|5x200|piramida pływ|piramida plyw|sprint pływ|sprint plyw)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("swim_intervals"),
+        activityProfile: "swim_intervals",
+        inferred: true,
+      });
+    }
+
+    if (/(deska pływacka|deska plywacka|pull buoy|catch-up|catch up|jednorącz|jednoracz|oddech co|sculling|nawrot|dolphin kick|wysokiego łokcia|wysokiego lokcia|technika żabki|technika zabki|pływanie techniczne|plywanie techniczne)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("swim_drills"),
+        activityProfile: "swim_drills",
+        inferred: true,
+      });
+    }
+
     if (/(pływan|plywan|swim|basen)/.test(normalizedName)) {
       return buildGenericExerciseMeta(exerciseName, {
         ...getActivityProfileMeta("swimming"),
         activityProfile: "swimming",
+        inferred: true,
+      });
+    }
+
+    if (/(boks|boxing|worek|shadow boxing|tarcze|garda|cios|slip rope|double-end|double end)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("boxing"),
+        activityProfile: "boxing",
+        inferred: true,
+      });
+    }
+
+    if (/(kickboxing|muay|mma|zapasy|judo|bjj|grappling|karate|taekwondo|sanda|samoobrona|uchikomi|sprawle|low kick|kopnię|kopnie|kolana na tarczy|wejścia w nogi|wejscia w nogi)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("martial_arts"),
+        activityProfile: "martial_arts",
+        inferred: true,
+      });
+    }
+
+    if (/(tenis|badminton|squash|padel|pickleball|rakiet|kortowe)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("racket_sport"),
+        activityProfile: "racket_sport",
+        inferred: true,
+      });
+    }
+
+    if (/(koszyk|piłka nożna|pilka nozna|siatków|siatkow|ręczna|reczna|futsal|unihokej|rugby|ultimate|frisbee|hokej|lacrosse|sport zespołowy|sport zespolowy|pickup game)/.test(normalizedName)) {
+      return buildGenericExerciseMeta(exerciseName, {
+        ...getActivityProfileMeta("team_sport"),
+        activityProfile: "team_sport",
         inferred: true,
       });
     }
@@ -10700,6 +11027,10 @@
       "arms",
       "core",
       "endurance",
+      "swimming",
+      "combat",
+      "cycling",
+      "team_sport",
     ], "full_body");
   }
 
@@ -11088,6 +11419,10 @@
       arms: { required: ["arms"], allowed: ["arms"] },
       core: { required: ["core"], allowed: ["core"] },
       endurance: { required: ["cardio"], allowed: ["cardio"] },
+      swimming: { required: ["cardio"], allowed: ["cardio"] },
+      combat: { required: ["cardio", "core"], allowed: ["cardio", "core", "mobility"] },
+      cycling: { required: ["cardio"], allowed: ["cardio"] },
+      team_sport: { required: ["cardio", "core"], allowed: ["cardio", "core", "mobility"] },
     };
     return map[focus] || map.full_body;
   }
@@ -11140,6 +11475,18 @@
     if (focus === "crossfit") {
       return pattern === "crossfit" || exercise.loadMode === "bodyweight" || /kettlebell|burpee|box jump|thruster|farmer|swing|rower|wioslarz|wioślarz|air bike|skakanka|hiit|tabata/.test(key);
     }
+    if (focus === "swimming") {
+      return ["swimming", "swim_drills", "swim_intervals"].includes(exercise.activityProfile) || /plyw|pływ|basen|kraulem|grzbiet|zabka|żabka|motyl|oddech|deska plywacka|deska pływacka/.test(key);
+    }
+    if (focus === "combat") {
+      return ["boxing", "martial_arts", "agility", "hiit", "conditioning_circuit", "mobility", "stretching"].includes(exercise.activityProfile) || /boks|worek|cios|walka|mma|muay|kickboxing|zapasy|judo|karate|taekwondo|garda|skakanka|shadow|cień|koordynac/.test(key);
+    }
+    if (focus === "cycling") {
+      return ["cycling", "cycling_intervals", "endurance"].includes(exercise.activityProfile) || /rower|bike|cycling|spinning|air bike|podjazd|cadence|kadencja/.test(key);
+    }
+    if (focus === "team_sport") {
+      return ["team_sport", "agility", "racket_sport", "conditioning_circuit", "mobility"].includes(exercise.activityProfile) || /pilka|piłka|koszyk|siatkow|reczna|ręczna|tenis|badminton|squash|agility|zwinność|koordynac|zmiana kierunku/.test(key);
+    }
     if (focus === "endurance") {
       return exercise.loadMode === "cardio" && !/sport|rekreacja|koszyk|pilka|piłka|badminton|tenis/.test(key);
     }
@@ -11181,6 +11528,38 @@
       }
       if (RUNNING_HARD_PROFILES.has(exercise.activityProfile) && Number.isFinite(settings && settings.currentWeightKg) && settings.currentWeightKg >= 105) {
         score -= 16;
+      }
+    }
+    if (focus === "swimming") {
+      if (["swimming", "swim_drills", "swim_intervals"].includes(exercise.activityProfile)) {
+        score += 58;
+      }
+      if (/technika|oddech|kraulem|grzbiet|zabka|żabka|motyl|nawrot|deska|pull buoy|interwal|interwał/.test(key)) {
+        score += 18;
+      }
+    }
+    if (focus === "combat") {
+      if (["boxing", "martial_arts", "agility", "hiit"].includes(exercise.activityProfile)) {
+        score += 54;
+      }
+      if (/worek|boks|cios|garda|shadow|skakanka|praca nog|kopnie|zapasy|mma|muay|kickboxing/.test(key)) {
+        score += 18;
+      }
+    }
+    if (focus === "cycling") {
+      if (["cycling", "cycling_intervals", "endurance"].includes(exercise.activityProfile)) {
+        score += 54;
+      }
+      if (/rower|spinning|podjazd|kadencja|z2|interwal|interwał/.test(key)) {
+        score += 16;
+      }
+    }
+    if (focus === "team_sport") {
+      if (["team_sport", "agility", "racket_sport", "conditioning_circuit"].includes(exercise.activityProfile)) {
+        score += 50;
+      }
+      if (/agility|zwin|koordyn|zmiana kierunku|koszyk|pilka|piłka|tenis|badminton|squash|siatkow/.test(key)) {
+        score += 16;
       }
     }
     if (/przysiad|martwy|wyciskanie lezac|podciag|wiosl|hip thrust|wyciskanie zolnierskie|dipy|rower|bieganie|wioslarz|crossfit wod|amrap|emom/.test(key)) {
@@ -11252,7 +11631,7 @@
         (focus === "arms" && pattern === "arms") ||
         (focus === "core" && pattern === "core") ||
         (focus === "crossfit" && ["crossfit", "cardio", "core"].includes(pattern)) ||
-        (focus === "endurance" && pattern === "cardio")) {
+        (["endurance", "swimming", "combat", "cycling", "team_sport"].includes(focus) && pattern === "cardio")) {
       score += 14;
     }
     if (latestWorkout) {
@@ -11261,7 +11640,7 @@
     if (Number.isFinite(settings && settings.currentWeightKg) && settings.currentWeightKg >= 110 && ["box jump", "sprint", "pistol"].some((riskKey) => key.includes(riskKey))) {
       score -= 8;
     }
-    if (exercise.loadMode === "cardio" && goal !== "fat_loss" && !["cut", "conditioning", "health"].includes(mode) && focus !== "endurance" && focus !== "crossfit") {
+    if (exercise.loadMode === "cardio" && goal !== "fat_loss" && !["cut", "conditioning", "health"].includes(mode) && !["endurance", "crossfit", "swimming", "combat", "cycling", "team_sport"].includes(focus)) {
       score -= 7;
     }
     return score;
@@ -11432,6 +11811,34 @@
         durationMin = clamp(durationMin, 24, 45);
         intensityRpe = clamp(intensityRpe, 6.5, 7.8);
         specificNote = "Fartlek: zmieniaj tempo, ale zostaw technikę. Szybkie fragmenty mają być dynamiczne, nie chaotyczne.";
+      }
+    }
+
+    if (cardio && ["swimming", "swim_drills", "swim_intervals", "cycling_intervals", "boxing", "martial_arts", "agility", "racket_sport", "team_sport"].includes(meta.activityProfile)) {
+      sets = clamp(Math.round(exercise.defaultSets || meta.defaultSets || sets || 1), 1, 12);
+      reps = 1;
+      durationMin = clamp(Math.round(exercise.defaultDurationMin || meta.defaultDurationMin || durationMin), 10, 70);
+      intensityRpe = clamp(Number(exercise.defaultIntensityRpe || meta.defaultIntensityRpe || intensityRpe), 4, 9);
+
+      if (meta.activityProfile === "swim_drills") {
+        intensityRpe = clamp(intensityRpe, 4.5, 6.2);
+        specificNote = "Pływanie techniczne: priorytetem jest pozycja ciała, oddech i czucie wody. Nie ścigaj tempa.";
+      } else if (meta.activityProfile === "swim_intervals") {
+        intensityRpe = clamp(intensityRpe, 7.2, 8.6);
+        specificNote = "Interwały pływackie: trzymaj równe odcinki, pełna kontrola oddechu, przerwa tylko tyle, aby utrzymać technikę.";
+      } else if (meta.activityProfile === "boxing") {
+        durationMin = clamp(durationMin, 18, 36);
+        specificNote = "Boks: pracuj rundami, pilnuj gardy, rotacji bioder i lekkiej pracy nóg. Nie bij worka kosztem techniki.";
+      } else if (meta.activityProfile === "martial_arts") {
+        specificNote = "Sztuki walki: technika przed intensywnością, dobra pozycja i kontrola zakresu ruchu. Przerwij, jeśli technika się rozpada.";
+      } else if (meta.activityProfile === "agility") {
+        durationMin = clamp(durationMin, 14, 28);
+        specificNote = "Zwinność: krótkie, ostre powtórzenia, pełna kontrola hamowania i zmiany kierunku.";
+      } else if (meta.activityProfile === "cycling_intervals") {
+        durationMin = clamp(durationMin, 28, 48);
+        specificNote = "Rower: rozgrzej kadencję, interwały jedź równo, bez przepalania pierwszych powtórzeń.";
+      } else if (meta.activityProfile === "team_sport" || meta.activityProfile === "racket_sport") {
+        specificNote = "Sport: potraktuj to jako pracę meczową lub techniczną. Zapisz czas i RPE, żeby aplikacja umiała policzyć obciążenie dnia.";
       }
     }
 

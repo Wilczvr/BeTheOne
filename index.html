@@ -13,11 +13,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260806-mobile-v2">
+  <link rel="stylesheet" href="styles.css?v=20260806-sports-help-v1">
   <script src="vendor/supabase.min.js?v=20260624b" defer></script>
   <script src="league-config.js?v=20260624b" defer></script>
   <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js?v=20260806-mobile-v2" defer></script>
+  <script src="app.js?v=20260806-sports-help-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
@@ -1593,7 +1593,7 @@
                 <select id="aiWorkoutFocusInput">
                   <option value="full_body">Full body</option>
                   <option value="upper">Góra ciała</option>
-                  <option value="lower">Dol ciała</option>
+                  <option value="lower">Dół ciała</option>
                   <option value="push">Push</option>
                   <option value="pull">Pull</option>
                   <option value="legs">Legs</option>
@@ -1603,6 +1603,10 @@
                   <option value="arms">Ramiona</option>
                   <option value="core">Core</option>
                   <option value="endurance">Wydolność</option>
+                  <option value="swimming">Pływanie</option>
+                  <option value="combat">Boks / sztuki walki</option>
+                  <option value="cycling">Rower</option>
+                  <option value="team_sport">Sporty zespołowe</option>
                 </select>
               </label>
               <label class="field">
@@ -1679,10 +1683,17 @@
               <option value="fast_walk">Szybki marsz</option>
               <option value="incline_walk">Marsz pod górę / incline</option>
               <option value="cycling">Rower</option>
+              <option value="cycling_intervals">Interwały rowerowe</option>
               <option value="elliptical">Orbitrek</option>
               <option value="rowing">Wioślarz</option>
               <option value="hiking">Hiking / trekking</option>
               <option value="swimming">Pływanie</option>
+              <option value="swim_drills">Technika pływania</option>
+              <option value="swim_intervals">Interwały pływackie</option>
+              <option value="boxing">Boks / worek</option>
+              <option value="martial_arts">Sztuki walki</option>
+              <option value="agility">Zwinność / koordynacja</option>
+              <option value="racket_sport">Sport rakietowy</option>
               <option value="hiit">Interwały / HIIT</option>
               <option value="conditioning_circuit">Obwód / conditioning</option>
               <option value="crossfit">Crossfit / metcon</option>
@@ -1931,10 +1942,17 @@
                 <option value="fast_walk">Szybki marsz</option>
                 <option value="incline_walk">Marsz pod górę / incline</option>
                 <option value="cycling">Rower</option>
+                <option value="cycling_intervals">Interwały rowerowe</option>
                 <option value="elliptical">Orbitrek</option>
                 <option value="rowing">Wioślarz</option>
                 <option value="hiking">Hiking / trekking</option>
                 <option value="swimming">Pływanie</option>
+                <option value="swim_drills">Technika pływania</option>
+                <option value="swim_intervals">Interwały pływackie</option>
+                <option value="boxing">Boks / worek</option>
+                <option value="martial_arts">Sztuki walki</option>
+                <option value="agility">Zwinność / koordynacja</option>
+                <option value="racket_sport">Sport rakietowy</option>
                 <option value="hiit">Interwały / HIIT</option>
                 <option value="conditioning_circuit">Obwód / conditioning</option>
                 <option value="crossfit">Crossfit / metcon</option>
@@ -2061,12 +2079,19 @@
                   <option value="fast_walk">Szybki marsz</option>
                   <option value="incline_walk">Marsz pod górę / incline</option>
                   <option value="cycling">Rower</option>
+                  <option value="cycling_intervals">Interwały rowerowe</option>
                   <option value="elliptical">Orbitrek</option>
                   <option value="rowing">Wioślarz</option>
                   <option value="hiking">Hiking / trekking</option>
                   <option value="swimming">Pływanie</option>
-                  <option value="hiit">Interwaly / HIIT</option>
-                  <option value="conditioning_circuit">Obwod / conditioning</option>
+                  <option value="swim_drills">Technika pływania</option>
+                  <option value="swim_intervals">Interwały pływackie</option>
+                  <option value="boxing">Boks / worek</option>
+                  <option value="martial_arts">Sztuki walki</option>
+                  <option value="agility">Zwinność / koordynacja</option>
+                  <option value="racket_sport">Sport rakietowy</option>
+                  <option value="hiit">Interwały / HIIT</option>
+                  <option value="conditioning_circuit">Obwód / conditioning</option>
                   <option value="crossfit">Crossfit / metcon</option>
                   <option value="endurance">Wydolność bazowa</option>
                   <option value="mobility">Mobilność / rozgrzewka</option>
