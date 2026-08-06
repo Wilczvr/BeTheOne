@@ -5126,3 +5126,40 @@ canvas {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Final mobile tooltip override: keep every (i) bubble close to its icon, never at page bottom. */
+@media (max-width: 760px) {
+  .hint-bubble,
+  .hint-trigger.hint-align-right .hint-bubble,
+  .hint-trigger.hint-align-left .hint-bubble {
+    position: fixed !important;
+    top: var(--hint-mobile-top, 0.7rem) !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: var(--hint-mobile-left, 0.7rem) !important;
+    width: var(--hint-mobile-width, min(17.5rem, calc(100vw - 1.1rem))) !important;
+    max-height: min(42vh, 18rem);
+    overflow-y: auto;
+    transform: translateY(-0.35rem);
+    z-index: 2600;
+  }
+
+  .hint-trigger.is-open .hint-bubble,
+  .hint-trigger:focus-within .hint-bubble {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
+@media (hover: none) and (max-width: 760px) {
+  .hint-trigger:hover .hint-bubble {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hint-trigger.is-open .hint-bubble {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -4,7 +4,7 @@
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.06.4";
+  const APP_VERSION = "2026.08.06.5";
   const DATA_SCHEMA_VERSION = 3;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -275,6 +275,7 @@
     uiScale: getInitialUiScale(),
     mobileLayoutObserver: null,
     mobileLayoutUpdateTimer: 0,
+    filterRerenderTimer: 0,
     hintInteractionsReady: false,
     entryPhotoDrafts: [],
     bannerTimeout: null,
@@ -1005,7 +1006,6 @@
   function applyMobileLayoutEnhancements() {
     enhanceMobileCollapsibleBlocks();
     updateResponsiveTableLabels();
-    updateCloudSyncUi();
   }
 
   function readMobileCollapseMap() {
@@ -1610,11 +1610,19 @@
   function bindFilterRerender(inputList) {
     inputList.filter(Boolean).forEach((input) => {
       const eventName = input.tagName === "SELECT" ? "change" : "input";
-      input.addEventListener(eventName, renderDashboard);
+      input.addEventListener(eventName, eventName === "change" ? renderDashboard : scheduleFilterRerender);
       if (eventName !== "change") {
         input.addEventListener("change", renderDashboard);
       }
     });
+  }
+
+  function scheduleFilterRerender() {
+    window.clearTimeout(state.filterRerenderTimer);
+    state.filterRerenderTimer = window.setTimeout(() => {
+      state.filterRerenderTimer = 0;
+      renderDashboard();
+    }, 140);
   }
 
   function createEmptyVersionState() {
@@ -1695,6 +1703,11 @@
     if (!container) {
       return;
     }
+    if (container.dataset.qrPayload === "" && container.dataset.qrPlaceholder === message) {
+      return;
+    }
+    container.dataset.qrPayload = "";
+    container.dataset.qrPlaceholder = message || "";
     container.replaceChildren();
     const placeholder = document.createElement("p");
     placeholder.className = "sync-qr-placeholder";
@@ -1712,6 +1725,10 @@
       return;
     }
 
+    if (container.dataset.qrPayload === payload) {
+      return;
+    }
+
     if (typeof qrcode !== "function") {
       renderSyncPlaceholder(container, "Generator QR nie został jeszcze załadowany. Użyj kopiowania kodu.");
       return;
@@ -1722,6 +1739,8 @@
       qr.addData(payload);
       qr.make();
       container.innerHTML = qr.createSvgTag(5, 10);
+      container.dataset.qrPayload = payload;
+      container.dataset.qrPlaceholder = "";
     } catch (error) {
       console.error("QR render failed", error);
       renderSyncPlaceholder(container, "Kod jest za długi na QR w tej sesji. Użyj kopiowania i wklejania.");
@@ -3337,7 +3356,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Objaśnienie pola", 1);
+      const trigger = createHelpTrigger(text, "Objaśnienie pola", 1, hint);
       const field = hint.closest(".field");
       const label = field ? field.querySelector("span") : null;
 
@@ -3357,7 +3376,7 @@
       const text = sanitizePlainText(hint.textContent, 320);
       const title = hint.parentElement ? hint.parentElement.querySelector("strong") : null;
       if (text && title) {
-        title.appendChild(createHelpTrigger(text, "Opis sekcji formularza", 2));
+        title.appendChild(createHelpTrigger(text, "Opis sekcji formularza", 2, hint));
       }
       hint.remove();
     });
@@ -3372,7 +3391,7 @@
       const heading = hint.previousElementSibling;
       const title = heading ? heading.querySelector("h2") : null;
       if (title) {
-        title.appendChild(createHelpTrigger(text, "Wprowadzenie do sekcji", 4));
+        title.appendChild(createHelpTrigger(text, "Wprowadzenie do sekcji", 4, hint));
       }
       hint.remove();
     });
@@ -3384,7 +3403,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Objaśnienie sekcji", 4);
+      const trigger = createHelpTrigger(text, "Objaśnienie sekcji", 4, hint);
       if (attachHelpTriggerToNearestHeading(hint, trigger)) {
         hint.remove();
         return;
@@ -3407,7 +3426,7 @@
         return;
       }
 
-      const trigger = createHelpTrigger(text, "Dodatkowa informacja", 3);
+      const trigger = createHelpTrigger(text, "Dodatkowa informacja", 3, hint);
       if (attachHelpTriggerToNearestHeading(hint, trigger)) {
         hint.remove();
         return;
@@ -3420,6 +3439,7 @@
     });
 
     pruneHelpTriggersPerBlock();
+    pruneDuplicateHelpTriggersInHeadings();
   }
 
   function pruneHelpTriggersPerBlock() {
@@ -3467,6 +3487,20 @@
     });
   }
 
+  function pruneDuplicateHelpTriggersInHeadings() {
+    document.querySelectorAll(".panel-heading h2, .panel-heading h3, .subpanel-heading h2, .subpanel-heading h3, .compact-heading h3, .chart-header h3, .form-section-heading strong").forEach((heading) => {
+      const triggers = Array.from(heading.querySelectorAll(":scope > .hint-trigger"));
+      if (triggers.length <= 1) {
+        return;
+      }
+
+      triggers
+        .sort((first, second) => Number(second.dataset.helpPriority || 0) - Number(first.dataset.helpPriority || 0))
+        .slice(1)
+        .forEach((trigger) => trigger.remove());
+    });
+  }
+
   function getHelpHeadingTitleForBlock(block) {
     return block.querySelector(
       ".panel-heading h2, .panel-heading h3, .subpanel-heading h2, .subpanel-heading h3, .compact-heading h3, .chart-header h3, h2, h3, strong"
@@ -3507,10 +3541,13 @@
     return false;
   }
 
-  function createHelpTrigger(text, ariaLabel, priority = 1) {
+  function createHelpTrigger(text, ariaLabel, priority = 1, sourceNode = null) {
     const trigger = document.createElement("span");
     trigger.className = "hint-trigger";
     trigger.dataset.helpPriority = String(priority);
+    if (sourceNode && sourceNode.id) {
+      trigger.dataset.sourceHintId = sourceNode.id;
+    }
 
     const icon = document.createElement("button");
     icon.type = "button";
@@ -3527,6 +3564,20 @@
     return trigger;
   }
 
+  function updateHelpTriggerText(sourceNode, text) {
+    if (!sourceNode || !sourceNode.id) {
+      return;
+    }
+
+    const safeText = sanitizePlainText(text, 320);
+    const trigger = Array.from(document.querySelectorAll(".hint-trigger"))
+      .find((item) => item.dataset.sourceHintId === sourceNode.id);
+    const bubble = trigger ? trigger.querySelector(".hint-bubble") : null;
+    if (bubble) {
+      bubble.textContent = safeText;
+    }
+  }
+
   function initializeHintInteractions() {
     if (state.hintInteractionsReady) {
       return;
@@ -3535,6 +3586,7 @@
     state.hintInteractionsReady = true;
     document.addEventListener("click", handleHintInteractionClick);
     document.addEventListener("keydown", handleHintInteractionKeydown);
+    window.addEventListener("scroll", debounce(updateHintPlacements, 80), { passive: true });
   }
 
   function handleHintInteractionClick(event) {
@@ -4653,7 +4705,9 @@
       activityProfile: config.activityProfileInput ? config.activityProfileInput.value : "strength",
     });
     if (config.hintNode) {
-      config.hintNode.textContent = buildExerciseLoadHint(meta);
+      const hintText = buildExerciseLoadHint(meta);
+      config.hintNode.textContent = hintText;
+      updateHelpTriggerText(config.hintNode, hintText);
     }
 
     if (!meta || (!rawMeta || (!rawMeta.isLibraryExercise && !rawMeta.inferred))) {
@@ -6213,7 +6267,7 @@
     renderLeagueSummary();
     renderLeaguePrEvents(isOwner);
     renderLeaguePrRankings();
-    renderLeagueInvite(isOwner);
+    renderLeagueInvite(isOwner, league);
     renderLeagueLeaderboard();
     renderLeaguePersonalRecords();
     renderLeagueMembers(isOwner);
@@ -6408,19 +6462,32 @@
     return String(second && second.achieved_on || "").localeCompare(String(first && first.achieved_on || ""));
   }
 
-  function renderLeagueInvite(isOwner) {
-    elements.leagueInvitePanel.classList.toggle("is-hidden", !isOwner);
-    if (!isOwner) {
+  function renderLeagueInvite(isOwner, league) {
+    const value = buildLeagueInviteValue(state.league.inviteToken);
+    const canShowInvite = Boolean(isOwner || value);
+    elements.leagueInvitePanel.classList.toggle("is-hidden", !canShowInvite);
+    if (!canShowInvite) {
       return;
     }
-    const value = buildLeagueInviteValue(state.league.inviteToken);
+
     elements.leagueInviteOutput.value = value;
     renderSyncQr(
       elements.leagueInviteQr,
       value,
-      "Kod nie jest zapisany na tym urządzeniu. Wygeneruj nowy kod zaproszenia."
+      isOwner
+        ? "Kod nie jest zapisany na tym urządzeniu. Wygeneruj nowy kod zaproszenia."
+        : "Kod zaproszenia nie jest zapisany na tym urządzeniu. Poproś właściciela ligi o nowy kod."
     );
     elements.copyLeagueInviteButton.disabled = !value || state.league.loading;
+    elements.rotateLeagueInviteButton.classList.toggle("is-hidden", !isOwner);
+    elements.rotateLeagueInviteButton.disabled = !isOwner || state.league.loading;
+
+    const note = elements.leagueInvitePanel.querySelector(".security-note");
+    if (note) {
+      note.textContent = isOwner
+        ? "Nowy kod natychmiast unieważnia poprzedni. Ten sam aktywny kod może zeskanować cała grupa."
+        : `To zapisany kod ligi „${league && league.name ? league.name : "BeTheOne"}”. Nowy kod może wygenerować tylko właściciel.`;
+    }
   }
 
   function renderLeagueLeaderboard() {
@@ -24174,6 +24241,10 @@ function sortTemplates(templates) {
   }
 
   function drawLineChart(canvas, config) {
+    if (!shouldDrawChartCanvas(canvas)) {
+      return;
+    }
+
     const prepared = prepareCanvas(canvas);
     const ctx = prepared.ctx;
     const width = prepared.width;
@@ -24218,6 +24289,15 @@ function sortTemplates(templates) {
       });
     }
     drawAxisLabels(ctx, width, height, padding, actual, forecast);
+  }
+
+  function shouldDrawChartCanvas(canvas) {
+    if (!canvas || !canvas.isConnected || canvas.closest(".is-hidden, [hidden]")) {
+      return false;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
   }
 
   function drawChartGrid(ctx, width, height, padding, minValue, maxValue, unit) {
