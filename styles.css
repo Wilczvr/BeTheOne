@@ -90,7 +90,6 @@ video {
 .sync-card,
 .league-card,
 .league-block,
-.chart-card,
 .field,
 .table-wrap {
   min-width: 0;
@@ -156,7 +155,6 @@ select {
 
 .hero h1,
 .panel h2,
-.chart-card h3,
 .insights-panel h3,
 .planner-block h3 {
   font-family: var(--font-display);
@@ -1605,38 +1603,6 @@ select option:hover,
   color: var(--danger);
 }
 
-.chart-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: 1rem;
-}
-
-.chart-card {
-  padding: 1.1rem;
-  border-radius: var(--radius-lg);
-  background: var(--panel-strong);
-  border: 1px solid rgba(255, 82, 133, 0.12);
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: baseline;
-  margin-bottom: 1rem;
-}
-
-.chart-header h3 {
-  margin: 0;
-  font-size: 1.35rem;
-}
-
-.chart-header p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
 canvas {
   width: 100%;
   height: auto;
@@ -2139,7 +2105,7 @@ canvas {
 }
 
 .custom-goals-table {
-  min-width: 54rem;
+  min-width: min(54rem, 100%);
 }
 
 .template-builder-grid {
@@ -2178,7 +2144,7 @@ canvas {
 }
 
 .template-execution-table {
-  min-width: 54rem;
+  min-width: min(54rem, 100%);
 }
 
 .table-input {
@@ -2443,7 +2409,7 @@ canvas {
 }
 
 .coach-plan-table {
-  min-width: 54rem;
+  min-width: min(54rem, 100%);
 }
 
 .coach-plan-table tbody tr[data-tone="good"] td:first-child {
@@ -2471,7 +2437,7 @@ canvas {
 }
 
 .meal-table {
-  min-width: 40rem;
+  min-width: min(40rem, 100%);
 }
 
 .post-workout-coach {
@@ -2497,7 +2463,7 @@ canvas {
 
 .entries-table {
   width: 100%;
-  min-width: 48rem;
+  min-width: min(48rem, 100%);
   border-collapse: collapse;
   background: rgba(10, 11, 17, 0.94);
 }
@@ -2563,7 +2529,7 @@ canvas {
 }
 
 .program-table {
-  min-width: 50rem;
+  min-width: min(50rem, 100%);
 }
 
 .table-control,
@@ -3156,14 +3122,14 @@ canvas {
 }
 
 .league-table {
-  min-width: 48rem;
+  min-width: min(48rem, 100%);
 }
 
 .league-pr-table,
 .league-members-table,
 .league-pr-events-table,
 .league-pr-ranking-table {
-  min-width: 34rem;
+  min-width: min(34rem, 100%);
 }
 
 .league-pr-event-form {
@@ -3180,7 +3146,7 @@ canvas {
 }
 
 .league-pr-ranking-table {
-  min-width: 48rem;
+  min-width: min(48rem, 100%);
 }
 
 .league-rank-badge {
@@ -3328,7 +3294,6 @@ canvas {
 .template-builder-card,
 .sync-card,
 .league-card,
-.chart-card,
 .table-wrap {
   content-visibility: auto;
   contain-intrinsic-size: 42rem;
@@ -3449,8 +3414,7 @@ canvas {
   .panel,
   .planner-block,
   .template-builder-card,
-  .league-card,
-  .chart-card {
+  .league-card {
     animation: none;
   }
 
@@ -3486,7 +3450,6 @@ canvas {
 
   .panel-heading,
   .subpanel-heading,
-  .chart-header,
   .progress-meta {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -3510,7 +3473,6 @@ canvas {
   .filter-grid,
   .metric-grid,
   .progress-grid,
-  .chart-grid,
   .template-builder-grid,
   .exercise-picker-grid,
   .program-grid,
@@ -3577,7 +3539,7 @@ canvas {
   }
 
   .entries-table {
-    min-width: 34rem;
+    min-width: min(34rem, 100%);
   }
 
   .entries-table th,
@@ -3587,7 +3549,7 @@ canvas {
   }
 
   .program-table {
-    min-width: 48rem;
+    min-width: min(48rem, 100%);
   }
 
   .command-deck {
@@ -3795,7 +3757,7 @@ canvas {
   }
 
   .entries-table {
-    min-width: 32rem;
+    min-width: min(32rem, 100%);
   }
 
   .avatar-store-nav {
@@ -3803,7 +3765,6 @@ canvas {
   }
 }
 
-/* Premium nocturne game skin */
 :root {
   --bg: #020204;
   --bg-deep: #050508;
@@ -4078,7 +4039,6 @@ body::after {
 .sync-card,
 .league-card,
 .league-block,
-.chart-card,
 .filter-toolbar,
 .glossary-item,
 .avatar-store-panel,
@@ -4101,8 +4061,7 @@ body::after {
   border-radius: var(--radius-lg);
 }
 
-.planner-block h3,
-.chart-card h3 {
+.planner-block h3 {
   color: #fff8fb;
   text-shadow: 0 0 16px rgba(255, 45, 103, 0.18);
 }
@@ -4407,7 +4366,6 @@ body::after {
   border-left-color: rgba(255, 45, 103, 0.72);
 }
 
-.chart-card canvas,
 canvas {
   border: 1px solid rgba(255, 45, 103, 0.1);
   box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.35);
@@ -4470,7 +4428,6 @@ canvas {
   }
 }
 
-/* Manual Supabase vault sync */
 .dashboard-title-row {
   display: flex;
   align-items: flex-end;
@@ -4613,7 +4570,6 @@ canvas {
   }
 }
 
-/* Locked pages should read as one intentional locked screen, not visible content under a thin veil. */
 .locked-overlay {
   min-height: clamp(24rem, 58vh, 42rem);
   overflow: hidden;
@@ -4644,7 +4600,6 @@ canvas {
   backdrop-filter: blur(10px);
 }
 
-/* Mobile-first usability layer: collapsible blocks and card-like tables. */
 .mobile-collapsible-content {
   display: contents;
 }
@@ -5127,7 +5082,6 @@ canvas {
   }
 }
 
-/* Final mobile tooltip override: keep every (i) bubble close to its icon, never at page bottom. */
 @media (max-width: 760px) {
   .hint-bubble,
   .hint-trigger.hint-align-right .hint-bubble,
@@ -5161,5 +5115,259 @@ canvas {
   .hint-trigger.is-open .hint-bubble {
     opacity: 1;
     pointer-events: auto;
+  }
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  min-width: 0;
+}
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+.layout,
+.hero,
+.panel,
+.planner-block,
+.template-builder-card,
+.sync-panel-shell,
+.sync-card,
+.league-card,
+.league-block,
+.filter-toolbar,
+.table-wrap,
+.command-deck,
+.command-deck-inner {
+  max-width: 100%;
+}
+
+.action-row,
+.cloud-sync-actions,
+.table-actions,
+.league-actions,
+.template-action-row {
+  flex-wrap: wrap;
+}
+
+.button,
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .form-grid,
+  .security-grid,
+  .filter-grid,
+  .metric-grid,
+  .progress-grid,
+  .dashboard-compact-grid,
+  .league-summary-grid,
+  .template-builder-grid,
+  .exercise-picker-grid,
+  .program-grid,
+  .photo-gallery,
+  .glossary-grid,
+  .avatar-option-grid,
+  .post-workout-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .insights-layout,
+  .weekly-report-layout,
+  .training-daily-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 900px) {
+  .layout {
+    padding-inline: clamp(0.55rem, 2.8vw, 1rem);
+  }
+
+  .panel,
+  .planner-block,
+  .template-builder-card,
+  .sync-card,
+  .league-card,
+  .league-block,
+  .filter-toolbar {
+    padding: clamp(0.72rem, 2.8vw, 1rem);
+    border-radius: clamp(0.75rem, 3vw, 1rem);
+  }
+
+  .panel-heading,
+  .subpanel-heading,
+  .dashboard-title-row,
+  .progress-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .entries-table,
+  .league-table,
+  .program-table,
+  .template-execution-table,
+  .meal-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    background: transparent;
+  }
+
+  .entries-table thead,
+  .league-table thead,
+  .program-table thead,
+  .template-execution-table thead,
+  .meal-table thead {
+    display: none;
+  }
+
+  .entries-table tbody,
+  .league-table tbody,
+  .program-table tbody,
+  .template-execution-table tbody,
+  .meal-table tbody {
+    display: grid;
+    gap: 0.58rem;
+  }
+
+  .entries-table tr,
+  .league-table tr,
+  .program-table tr,
+  .template-execution-table tr,
+  .meal-table tr {
+    display: grid;
+    width: 100%;
+    padding: 0.64rem;
+    border: 1px solid rgba(255, 45, 103, 0.14);
+    border-radius: 0.82rem;
+    background: linear-gradient(145deg, rgba(14, 15, 22, 0.95), rgba(5, 6, 10, 0.96));
+  }
+
+  .entries-table td,
+  .entries-table th,
+  .league-table td,
+  .league-table th,
+  .program-table td,
+  .program-table th,
+  .template-execution-table td,
+  .template-execution-table th,
+  .meal-table td,
+  .meal-table th {
+    display: grid;
+    grid-template-columns: minmax(5.6rem, 0.4fr) minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.38rem 0;
+    border-bottom: 1px solid rgba(255, 82, 133, 0.08);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .entries-table td::before,
+  .entries-table th::before,
+  .league-table td::before,
+  .league-table th::before,
+  .program-table td::before,
+  .program-table th::before,
+  .template-execution-table td::before,
+  .template-execution-table th::before,
+  .meal-table td::before,
+  .meal-table th::before {
+    content: attr(data-label);
+    color: #b995a5;
+    font-size: 0.64rem;
+    font-weight: 950;
+    letter-spacing: 0.07em;
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+
+  .entries-table td:last-child,
+  .entries-table th:last-child,
+  .league-table td:last-child,
+  .league-table th:last-child,
+  .program-table td:last-child,
+  .program-table th:last-child,
+  .template-execution-table td:last-child,
+  .template-execution-table th:last-child,
+  .meal-table td:last-child,
+  .meal-table th:last-child {
+    border-bottom: 0;
+  }
+
+  .entries-table td[colspan],
+  .entries-table th[colspan],
+  .league-table td[colspan],
+  .league-table th[colspan],
+  .program-table td[colspan],
+  .program-table th[colspan],
+  .template-execution-table td[colspan],
+  .template-execution-table th[colspan],
+  .meal-table td[colspan],
+  .meal-table th[colspan] {
+    display: block;
+  }
+
+  .entries-table td[colspan]::before,
+  .entries-table th[colspan]::before,
+  .league-table td[colspan]::before,
+  .league-table th[colspan]::before,
+  .program-table td[colspan]::before,
+  .program-table th[colspan]::before,
+  .template-execution-table td[colspan]::before,
+  .template-execution-table th[colspan]::before,
+  .meal-table td[colspan]::before,
+  .meal-table th[colspan]::before {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero h1 {
+    font-size: clamp(2.15rem, 13vw, 3rem);
+  }
+
+  .button,
+  button {
+    min-height: 2.35rem;
+    padding-inline: 0.72rem;
+  }
+
+  .entries-table td,
+  .entries-table th,
+  .league-table td,
+  .league-table th,
+  .program-table td,
+  .program-table th,
+  .template-execution-table td,
+  .template-execution-table th,
+  .meal-table td,
+  .meal-table th {
+    grid-template-columns: minmax(4.6rem, 0.36fr) minmax(0, 1fr);
+  }
+
+  .table-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,10 +1,10 @@
-(function () {
+﻿(function () {
   "use strict";
 
   const STORAGE_KEY = "fitsecureai.vault";
   const FAILED_UNLOCK_KEY = "betheone.failed_unlock_attempts";
   const DATA_VERSION = 1;
-  const APP_VERSION = "2026.08.06.5";
+  const APP_VERSION = "2026.08.07.1";
   const DATA_SCHEMA_VERSION = 3;
   const AUTO_LOCK_MS = 5 * 24 * 60 * 60 * 1000;
   const LOCAL_SESSION_DB_NAME = "betheone-local-session";
@@ -276,6 +276,8 @@
     mobileLayoutObserver: null,
     mobileLayoutUpdateTimer: 0,
     filterRerenderTimer: 0,
+    aiExerciseRenderTimer: 0,
+    programPreviewRenderTimer: 0,
     hintInteractionsReady: false,
     entryPhotoDrafts: [],
     bannerTimeout: null,
@@ -711,13 +713,6 @@
     physiqueCards: document.getElementById("physiqueCards"),
     physiqueBody: document.getElementById("physiqueBody"),
     progressPhotoGallery: document.getElementById("progressPhotoGallery"),
-    weightChart: document.getElementById("weightChart"),
-    energyChart: document.getElementById("energyChart"),
-    sessionChart: document.getElementById("sessionChart"),
-    waistChart: document.getElementById("waistChart"),
-    exerciseWeightChart: document.getElementById("exerciseWeightChart"),
-    exerciseVolumeChart: document.getElementById("exerciseVolumeChart"),
-    exerciseOneRmChart: document.getElementById("exerciseOneRmChart"),
     appUpdateNotice: document.getElementById("appUpdateNotice"),
     appVersionText: document.getElementById("appVersionText"),
     appUpdateReloadButton: document.getElementById("appUpdateReloadButton"),
@@ -751,8 +746,6 @@
 
     applyUiScale(state.uiScale, { persist: false, announce: false });
     registerPwaServiceWorker();
-    removeChartsView();
-    removeMicrocycleView();
     reorganizeTrainingLayout();
     bindEvents();
     updateInstallAppUi();
@@ -762,7 +755,6 @@
     renderHabitWeekdayPicker();
     renderTrainingGeneratorState();
     renderAiExercisePicker();
-    renderAiModeRecommendations();
     syncExerciseTemplateInput("workout");
     syncExerciseTemplateInput("template");
     resetEntryForm();
@@ -949,7 +941,6 @@
         return stored;
       }
     } catch (_error) {
-      // UI density is only a local preference.
     }
 
     return window.matchMedia && window.matchMedia("(max-width: 760px)").matches
@@ -970,7 +961,6 @@
       try {
         localStorage.setItem(UI_SCALE_STORAGE_KEY, nextScale);
       } catch (_error) {
-        // Losing this preference is harmless; the app will fall back on next start.
       }
     }
 
@@ -999,8 +989,11 @@
   }
 
   function scheduleMobileLayoutEnhancement() {
+    if (!isMobileViewport()) {
+      return;
+    }
     window.clearTimeout(state.mobileLayoutUpdateTimer);
-    state.mobileLayoutUpdateTimer = window.setTimeout(applyMobileLayoutEnhancements, 120);
+    state.mobileLayoutUpdateTimer = window.setTimeout(applyMobileLayoutEnhancements, 180);
   }
 
   function applyMobileLayoutEnhancements() {
@@ -1023,7 +1016,6 @@
       preferences[key] = Boolean(collapsed);
       localStorage.setItem(MOBILE_COLLAPSE_STORAGE_KEY, JSON.stringify(preferences));
     } catch (_error) {
-      // Layout preferences are helpful, but never critical for user data.
     }
   }
 
@@ -1486,26 +1478,20 @@
       elements.toggleTrainingGeneratorButton.addEventListener("click", toggleTrainingGenerator);
     }
     elements.aiExercisePicker.addEventListener("change", handleAiExercisePickerChange);
-    elements.aiExerciseFilterInput.addEventListener("input", () => {
-      renderAiExercisePicker();
-      renderAiModeRecommendations();
-    });
+    elements.aiExerciseFilterInput.addEventListener("input", scheduleAiExerciseRender);
     elements.aiWorkoutFocusInput.addEventListener("change", () => {
       pruneAiSelectionForFocus();
       renderAiExercisePicker();
-      renderAiModeRecommendations();
       setTemplateBuilderStatus(elements.aiTemplateStatus, "Zmieniono typ jednostki. Lista ćwiczeń została zawężona do pasujących wzorców ruchu.", false);
     });
     elements.aiPriorityModeInput.addEventListener("change", () => {
       pruneAiSelectionForFocus();
       renderAiExercisePicker();
-      renderAiModeRecommendations();
       setTemplateBuilderStatus(elements.aiTemplateStatus, "Zmieniono tryb treningu. Trener AI zaktualizował priorytety ćwiczeń i zaleceń.", false);
     });
     elements.aiPreparationGoalSelect.addEventListener("change", () => {
       pruneAiSelectionForFocus();
       renderAiExercisePicker();
-      renderAiModeRecommendations();
       setTemplateBuilderStatus(elements.aiTemplateStatus, "Zmieniono cel przygotowania. Trener AI dopasował filtr ćwiczeń i tempo bodźca.", false);
     });
     elements.selectAiPopularExercisesButton.addEventListener("click", selectPopularAiExercises);
@@ -1542,12 +1528,12 @@
     elements.programCycleLengthInput.addEventListener("change", syncTrainingProgramCycleScaffold);
     elements.programDeloadWeekInput.addEventListener("change", syncTrainingProgramCycleScaffold);
     elements.programPreviewDateInput.addEventListener("change", renderTrainingProgramPreviewFromForm);
-    elements.programForm.addEventListener("input", renderTrainingProgramPreviewFromForm);
+    elements.programForm.addEventListener("input", scheduleTrainingProgramPreview);
     elements.programForm.addEventListener("change", renderTrainingProgramPreviewFromForm);
-    elements.programScheduleBody.addEventListener("input", renderTrainingProgramPreviewFromForm);
+    elements.programScheduleBody.addEventListener("input", scheduleTrainingProgramPreview);
     elements.programScheduleBody.addEventListener("change", renderTrainingProgramPreviewFromForm);
     if (elements.programCycleBody) {
-      elements.programCycleBody.addEventListener("input", renderTrainingProgramPreviewFromForm);
+      elements.programCycleBody.addEventListener("input", scheduleTrainingProgramPreview);
       elements.programCycleBody.addEventListener("change", renderTrainingProgramPreviewFromForm);
     }
     elements.workoutForm.addEventListener("submit", handleWorkoutSubmit);
@@ -1581,7 +1567,6 @@
     elements.resetExerciseFiltersButton.addEventListener("click", () => resetFilterGroup("exercise"));
     elements.resetExerciseHistoryFiltersButton.addEventListener("click", () => resetFilterGroup("exerciseHistory"));
     elements.resetEntryFiltersButton.addEventListener("click", () => resetFilterGroup("entry"));
-    window.addEventListener("resize", debounce(renderCharts, 120));
     window.addEventListener("resize", debounce(updateHintPlacements, 120));
     window.addEventListener("hashchange", () => {
       processPendingLeagueInviteFromLocation();
@@ -1622,6 +1607,22 @@
     state.filterRerenderTimer = window.setTimeout(() => {
       state.filterRerenderTimer = 0;
       renderDashboard();
+    }, 140);
+  }
+
+  function scheduleAiExerciseRender() {
+    window.clearTimeout(state.aiExerciseRenderTimer);
+    state.aiExerciseRenderTimer = window.setTimeout(() => {
+      state.aiExerciseRenderTimer = 0;
+      renderAiExercisePicker();
+    }, 120);
+  }
+
+  function scheduleTrainingProgramPreview() {
+    window.clearTimeout(state.programPreviewRenderTimer);
+    state.programPreviewRenderTimer = window.setTimeout(() => {
+      state.programPreviewRenderTimer = 0;
+      renderTrainingProgramPreviewFromForm();
     }, 140);
   }
 
@@ -1826,7 +1827,6 @@
     try {
       localStorage.setItem(CLOUD_SYNC_META_KEY, JSON.stringify(safeMeta));
     } catch (_error) {
-      // Sync metadata is helpful, but not critical for the encrypted vault itself.
     }
     state.cloudSync.lastSyncAt = safeMeta.syncedAt;
     state.cloudSync.lastChecksum = safeMeta.checksum;
@@ -1968,7 +1968,7 @@
   }
 
   function isMobileViewport() {
-    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+    return window.matchMedia ? window.matchMedia("(max-width: 900px)").matches : window.innerWidth <= 900;
   }
 
   function getCloudSyncDeviceId() {
@@ -2380,7 +2380,6 @@
         return decodeURIComponent(hashParams.get("sync"));
       }
     } catch (error) {
-      // ignore and continue with plain token handling
     }
 
     if (raw.startsWith("#sync=")) {
@@ -2968,7 +2967,7 @@
     const templateBlock = elements.templateSelect ? elements.templateSelect.closest(".planner-block") : null;
     const templateActionRow = elements.applyTemplateButton ? elements.applyTemplateButton.closest(".action-row") : null;
     const templateExerciseBlock = elements.templateExerciseBody ? elements.templateExerciseBody.closest(".planner-block") : null;
-    const microcycleBlock = elements.programForm ? elements.programForm.closest(".planner-block") : null;
+    const programBlock = elements.programForm ? elements.programForm.closest(".planner-block") : null;
     const sessionBlock = elements.sessionBody ? elements.sessionBody.closest(".planner-block") : null;
     const exerciseSummaryBlock = elements.exerciseSummaryBody ? elements.exerciseSummaryBody.closest(".planner-block") : null;
     const historyHeader = historySection.querySelector(".panel-heading");
@@ -2979,7 +2978,6 @@
     const historySummary = elements.exerciseHistorySummary || null;
     const historyToolbar = elements.exerciseHistoryDateFromInput ? elements.exerciseHistoryDateFromInput.closest(".filter-toolbar") : null;
     const historyCards = elements.exerciseHistoryCards || null;
-    const historyCharts = elements.exerciseWeightChart ? elements.exerciseWeightChart.closest(".chart-grid") : null;
     const prPanel = elements.exercisePrList ? elements.exercisePrList.closest(".insights-layout > div, .insights-layout div") : null;
     const historyLayout = prPanel ? prPanel.parentElement : null;
     const historyTablePanel = elements.exerciseHistoryBody && elements.exerciseHistoryBody.closest(".table-wrap")
@@ -3080,9 +3078,9 @@
       .filter(Boolean)
       .forEach((node) => workoutSection.appendChild(node));
 
-    if (microcycleBlock) {
-      microcycleBlock.classList.add("is-hidden");
-      workoutSection.appendChild(microcycleBlock);
+    if (programBlock) {
+      programBlock.classList.add("is-hidden");
+      workoutSection.appendChild(programBlock);
     }
 
     if (historyEyebrow) {
@@ -3125,10 +3123,6 @@
 
     if (historyCards) {
       historyCards.style.display = "none";
-    }
-
-    if (historyCharts) {
-      historyCharts.style.display = "none";
     }
 
     if (historyTablePanel) {
@@ -3207,28 +3201,6 @@
     copy.append(eyebrow, headline, note);
     heading.appendChild(copy);
     panel.insertBefore(heading, panel.firstElementChild || null);
-  }
-
-  function removeChartsView() {
-    document.querySelectorAll('[data-tab-button="charts"]').forEach((button) => button.remove());
-    const chartsSection = document.getElementById("chartsSection");
-    if (chartsSection) {
-      chartsSection.remove();
-    }
-  }
-
-  function removeMicrocycleView() {
-    document.querySelectorAll('[data-tab-button="microcycle"]').forEach((button) => button.remove());
-    const microcycleSection = document.getElementById("microcycleSection");
-    if (microcycleSection) {
-      microcycleSection.remove();
-    }
-    if (state.activeTab === "microcycle") {
-      state.activeTab = "plan";
-    }
-    elements.tabButtons = Array.from(document.querySelectorAll("[data-tab-button]"));
-    elements.tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
-    elements.lockablePanels = Array.from(document.querySelectorAll(".app-lockable"));
   }
 
   function handleTabClick(event) {
@@ -4910,7 +4882,6 @@
     try {
       localStorage.setItem(EMAIL_RECOVERY_PENDING_KEY, JSON.stringify(payload));
     } catch (_error) {
-      // Pending email is a UX helper; the user can resend verification if storage fails.
     }
   }
 
@@ -4920,7 +4891,6 @@
     try {
       localStorage.removeItem(EMAIL_RECOVERY_PENDING_KEY);
     } catch (_error) {
-      // Ignore storage cleanup failures.
     }
   }
 
@@ -5199,7 +5169,6 @@
     try {
       await state.emailRecovery.client.auth.signOut();
     } catch (_error) {
-      // A stale email-auth session is non-critical; the next OTP flow can replace it.
     }
   }
 
@@ -5249,7 +5218,6 @@
     try {
       localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(mergedTokens));
     } catch (_error) {
-      // The encrypted vault still keeps the important league token copy.
     }
 
     return mergedTokens;
@@ -5270,7 +5238,6 @@
       try {
         localStorage.setItem(LEAGUE_ACTIVE_KEY, activeLeagueId);
       } catch (_error) {
-        // Active league can still be held in memory for the current session.
       }
     }
 
@@ -5393,7 +5360,6 @@
         localStorage.removeItem(LEAGUE_ACTIVE_KEY);
       }
     } catch (_error) {
-      // League selection still works for the current session.
     }
   }
 
@@ -5420,7 +5386,6 @@
     try {
       localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(tokens));
     } catch (_error) {
-      // The owner can always rotate the invite and receive a new token.
     }
     if (state.league.activeLeagueId === leagueId) {
       state.league.inviteToken = token;
@@ -5438,7 +5403,6 @@
     try {
       localStorage.setItem(LEAGUE_INVITES_KEY, JSON.stringify(tokens));
     } catch (_error) {
-      // Ignore storage cleanup failures.
     }
     if (state.league.activeLeagueId === leagueId) {
       state.league.inviteToken = "";
@@ -5828,7 +5792,6 @@
       try {
         state.league.realtimeChannel.unsubscribe();
       } catch (_error) {
-        // Ignore closed-channel cleanup failures.
       }
     }
     state.league.realtimeChannel = null;
@@ -6674,7 +6637,6 @@
         return sanitizeLeagueInviteToken(decodeURIComponent(token));
       }
     } catch (_error) {
-      // Continue with a plain token.
     }
     if (raw.startsWith("#league=")) {
       return sanitizeLeagueInviteToken(decodeURIComponent(raw.slice(8)));
@@ -7779,7 +7741,6 @@
     try {
       await deleteLocalSessionRecord();
     } catch (_error) {
-      // Brak IndexedDB lub tryb prywatny nie powinien blokować zwykłego logowania.
     }
   }
 
@@ -8925,7 +8886,6 @@
     renderPostWorkoutCoach(analytics);
     renderExerciseSummary(analytics.exerciseSummaries);
     renderExerciseHistory(analytics.exerciseHistory);
-    renderCharts(analytics);
     applyActiveTab();
   }
 
@@ -12720,7 +12680,6 @@
         const inflatedStream = new Blob([streamBytes]).stream().pipeThrough(new DecompressionStream(format));
         return await new Response(inflatedStream).arrayBuffer();
       } catch (_error) {
-        // Try the next supported browser format.
       }
     }
     return null;
@@ -13359,63 +13318,6 @@
       actionCell.appendChild(actionWrap);
       row.appendChild(actionCell);
       elements.templateExerciseBody.appendChild(row);
-    });
-  }
-
-  function renderSessionTable(sessionSummaries) {
-    elements.sessionBody.replaceChildren();
-    if (state.unlocked) {
-      const filteredSessions = filterSessionSummaries(sessionSummaries);
-      if (sessionSummaries.length && !filteredSessions.length) {
-        elements.sessionBody.appendChild(createEmptyTableRow("Brak sesji pasujących do aktywnych filtrów.", 6));
-        return;
-      }
-      sessionSummaries = filteredSessions;
-    } else {
-      elements.sessionFilterSummary.textContent = "Filtry sesji uaktywnia się po zalogowaniu.";
-    }
-
-    if (!state.unlocked) {
-      elements.sessionBody.appendChild(createEmptyTableRow("Zaloguj się, aby zobaczyć sesje treningowe.", 6));
-      return;
-    }
-
-    if (!sessionSummaries.length) {
-      elements.sessionBody.appendChild(createEmptyTableRow("Brak sesji. Dodaj ćwiczenia, a aplikacja zgrupuje je w treningi dzienne.", 6));
-      return;
-    }
-
-    sessionSummaries.forEach((session) => {
-      const row = document.createElement("tr");
-      row.appendChild(createCell(formatDisplayDate(session.date)));
-      row.appendChild(createCell(`${session.exerciseCount} ćw.`));
-      row.appendChild(createCell(formatSessionActivitySummary(session)));
-      row.appendChild(createCell(formatMetric(session.estimatedCalories, "kcal")));
-      row.appendChild(createCell(session.exercisePreview));
-
-      const actionCell = document.createElement("td");
-      const actionWrap = document.createElement("div");
-      actionWrap.className = "table-actions";
-
-      const openButton = document.createElement("button");
-      openButton.type = "button";
-      openButton.className = "edit-button";
-      openButton.setAttribute("data-session-date", session.date);
-      openButton.setAttribute("data-session-action", "open");
-      openButton.textContent = "Otwórz dzień";
-
-      const templateButton = document.createElement("button");
-      templateButton.type = "button";
-      templateButton.className = "edit-button";
-      templateButton.setAttribute("data-session-date", session.date);
-      templateButton.setAttribute("data-session-action", "template");
-      templateButton.textContent = "Szablon";
-
-      actionWrap.append(openButton, templateButton);
-      actionCell.appendChild(actionWrap);
-      row.appendChild(actionCell);
-
-      elements.sessionBody.appendChild(row);
     });
   }
 
@@ -15053,73 +14955,6 @@ async function handleImportWorkoutsCsv(event) {
     elements.resetWorkoutButton.textContent = editing ? "Anuluj edycję treningu" : "Wyczyść trening";
   }
 
-  function renderWorkoutTable(workouts) {
-    elements.workoutBody.replaceChildren();
-    if (state.unlocked) {
-      const filteredWorkouts = filterWorkouts(workouts);
-      if (workouts.length && !filteredWorkouts.length) {
-        elements.workoutBody.appendChild(createEmptyTableRow("Brak aktywności treningowych pasujących do aktywnych filtrów.", 6));
-        return;
-      }
-      workouts = filteredWorkouts;
-    } else {
-      elements.workoutFilterSummary.textContent = "Filtry aktywności uaktywnia się po zalogowaniu.";
-    }
-
-    if (!state.unlocked) {
-      elements.workoutBody.appendChild(createEmptyTableRow("Zaloguj się, aby zobaczyć treningi.", 6));
-      return;
-    }
-
-    if (!workouts.length) {
-      elements.workoutBody.appendChild(createEmptyTableRow("Brak zapisanych ćwiczeń.", 6));
-      return;
-    }
-
-    const settings = normalizeData(state.data).settings;
-    const currentWeight = getCurrentWeightForCalculations(settings, state.data.entries);
-
-    workouts.forEach((workout) => {
-      const row = document.createElement("tr");
-      row.appendChild(createCell(formatDisplayDate(workout.date)));
-      row.appendChild(createCell(workout.exerciseName));
-      row.appendChild(createCell(formatWorkoutPlan(workout)));
-      row.appendChild(createCell(formatMetric(workout.durationMin, "min")));
-      row.appendChild(createCell(formatMetric(getWorkoutCalories(workout, settings, currentWeight), "kcal")));
-
-      const actionCell = document.createElement("td");
-      const actionWrap = document.createElement("div");
-      actionWrap.className = "table-actions";
-
-      const editButton = document.createElement("button");
-      editButton.type = "button";
-      editButton.className = "edit-button";
-      editButton.setAttribute("data-workout-id", workout.id);
-      editButton.setAttribute("data-workout-action", "edit");
-      editButton.textContent = "Edytuj";
-
-      const historyButton = document.createElement("button");
-      historyButton.type = "button";
-      historyButton.className = "edit-button";
-      historyButton.setAttribute("data-workout-id", workout.id);
-      historyButton.setAttribute("data-workout-action", "history");
-      historyButton.textContent = "Historia";
-
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "delete-button";
-      deleteButton.setAttribute("data-workout-id", workout.id);
-      deleteButton.setAttribute("data-workout-action", "delete");
-      deleteButton.textContent = "Usuń";
-
-      actionWrap.append(editButton, historyButton, deleteButton);
-      actionCell.appendChild(actionWrap);
-      row.appendChild(actionCell);
-
-      elements.workoutBody.appendChild(row);
-    });
-  }
-
   function renderExerciseSummary(exerciseSummaries) {
     elements.exerciseSummaryBody.replaceChildren();
     if (state.unlocked) {
@@ -15170,7 +15005,7 @@ async function handleImportWorkoutsCsv(event) {
       elements.exerciseSummaryBody.appendChild(row);
     });
   }
-function renderExerciseHistory(exerciseHistory) {
+  function renderExerciseHistory(exerciseHistory) {
     populateExerciseHistorySelect(exerciseHistory.availableExercises, exerciseHistory.selectedExerciseName);
     renderExerciseHistoryCards(exerciseHistory);
     renderExercisePrList(exerciseHistory);
@@ -15239,27 +15074,6 @@ function renderExerciseHistory(exerciseHistory) {
     });
   }
 
-  function renderExercisePrList(exerciseHistory) {
-    elements.exercisePrList.replaceChildren();
-
-    let items = [];
-    if (!state.unlocked) {
-      items = ["Zaloguj się, aby zobaczyć ostatnie rekordy i przełamania progresu."];
-    } else if (!exerciseHistory.selectedExerciseName) {
-      items = ["Wybierz ćwiczenie, aby aplikacja pokazała listę ostatnich PR-ów tego ruchu."];
-    } else if (exerciseHistory.prEvents.length) {
-      items = exerciseHistory.prEvents;
-    } else {
-      items = ["Brak nowych PR-ów do pokazania. Dodaj więcej sesji tego ćwiczenia, aby aplikacja wychwyciła kolejne rekordy."];
-    }
-
-    items.forEach((message) => {
-      const item = document.createElement("li");
-      item.textContent = message;
-      elements.exercisePrList.appendChild(item);
-    });
-  }
-
     function renderExerciseHistoryTable(exerciseHistory) {
     elements.exerciseHistoryBody.replaceChildren();
     if (state.unlocked && exerciseHistory.selectedExerciseName && exerciseHistory.sessions.length) {
@@ -15303,7 +15117,7 @@ function renderExerciseHistory(exerciseHistory) {
       elements.exerciseHistoryBody.appendChild(row);
     });
   }
-function handleExerciseSummaryTableAction(event) {
+  function handleExerciseSummaryTableAction(event) {
     const actionButton = event.target.closest("button[data-exercise-name][data-exercise-action]");
     if (!actionButton || !state.unlocked) {
       return;
@@ -15345,169 +15159,6 @@ function handleExerciseSummaryTableAction(event) {
     if (options && options.status) {
       showStatus(`Wybrano historię ćwiczenia ${sanitizedName}.`);
     }
-  }
-
-  function renderCharts(analyticsArg) {
-    const analytics = analyticsArg || computeAnalytics(state.data);
-    const emptyLabel = state.unlocked
-      ? "Dodaj przynajmniej dwa wpisy z daną metryką, aby narysować trend."
-      : "Zaloguj się, aby wyświetlić wykres.";
-    const emptySessionLabel = state.unlocked
-      ? "Dodaj treningi z co najmniej dwóch tygodni, aby zobaczyć rytm sesji."
-      : "Zaloguj się, aby wyświetlić wykres.";
-
-    drawLineChart(elements.weightChart, {
-      actual: state.unlocked ? analytics.weightChart.actual : [],
-      forecast: state.unlocked ? analytics.weightChart.forecast : [],
-      actualColor: "#0c7c59",
-      forecastColor: "#b95d2d",
-      emptyLabel,
-      unit: "kg",
-    });
-
-    drawLineChart(elements.energyChart, {
-      actual: state.unlocked ? analytics.energyChart.actual : [],
-      forecast: state.unlocked ? analytics.energyChart.forecast : [],
-      actualColor: "#095a41",
-      forecastColor: "#d2842f",
-      emptyLabel,
-      unit: "kcal",
-    });
-
-    drawLineChart(elements.sessionChart, {
-      actual: state.unlocked ? analytics.sessionChart.actual : [],
-      forecast: state.unlocked ? analytics.sessionChart.forecast : [],
-      actualColor: "#7c3b22",
-      forecastColor: "#b95d2d",
-      emptyLabel: emptySessionLabel,
-      unit: "sesji",
-    });
-
-    drawLineChart(elements.waistChart, {
-      actual: state.unlocked ? analytics.waistChart.actual : [],
-      forecast: [],
-      actualColor: "#7c3b22",
-      forecastColor: "#7c3b22",
-      emptyLabel: state.unlocked
-        ? "Dodaj co najmniej dwa pomiary pasa, aby zobaczyć trend zmian sylwetki."
-        : "Zaloguj się, aby wyświetlić wykres.",
-      unit: "cm",
-    });
-
-    drawLineChart(elements.exerciseWeightChart, {
-      actual: state.unlocked ? analytics.exerciseHistory.weightChart.actual : [],
-      forecast: [],
-      actualColor: "#0c7c59",
-      forecastColor: "#0c7c59",
-      emptyLabel: state.unlocked
-        ? "Wybierz ćwiczenie z co najmniej jedną sesją, aby zobaczyć top ciężar."
-        : "Zaloguj się, aby wyświetlić wykres.",
-      unit: "kg",
-    });
-
-    drawLineChart(elements.exerciseVolumeChart, {
-      actual: state.unlocked ? analytics.exerciseHistory.volumeChart.actual : [],
-      forecast: [],
-      actualColor: "#b95d2d",
-      forecastColor: "#b95d2d",
-      emptyLabel: state.unlocked
-        ? "Wybierz ćwiczenie z co najmniej jedną sesją, aby zobaczyć aktywność sesji."
-        : "Zaloguj się, aby wyświetlić wykres.",
-      unit: "kcal",
-    });
-
-    drawLineChart(elements.exerciseOneRmChart, {
-      actual: state.unlocked ? analytics.exerciseHistory.oneRmChart.actual : [],
-      forecast: [],
-      actualColor: "#7c3b22",
-      forecastColor: "#7c3b22",
-      emptyLabel: state.unlocked
-        ? "Wybierz ćwiczenie z co najmniej jedną sesją, aby zobaczyć trend szacowanego 1RM."
-        : "Zaloguj się, aby wyświetlić wykres.",
-      unit: "kg",
-    });
-  }
-
-  function renderCharts(analyticsArg) {
-    const analytics = analyticsArg || computeAnalytics(state.data);
-    const emptyLabel = state.unlocked
-      ? "Dodaj przynajmniej dwa wpisy z dana metryka, aby narysowac trend."
-      : "Zaloguj się, aby wyswietlic wykres.";
-    const emptySessionLabel = state.unlocked
-      ? "Dodaj treningi z co najmniej dwóch tygodni, aby zobaczyć rytm sesji."
-      : "Zaloguj się, aby wyswietlic wykres.";
-    const exerciseHistory = analytics.exerciseHistory || buildEmptyExerciseHistory([], null);
-
-    drawLineChart(elements.weightChart, {
-      actual: state.unlocked ? analytics.weightChart.actual : [],
-      forecast: state.unlocked ? analytics.weightChart.forecast : [],
-      actualColor: "#0c7c59",
-      forecastColor: "#b95d2d",
-      emptyLabel,
-      unit: "kg",
-    });
-
-    drawLineChart(elements.energyChart, {
-      actual: state.unlocked ? analytics.energyChart.actual : [],
-      forecast: state.unlocked ? analytics.energyChart.forecast : [],
-      actualColor: "#095a41",
-      forecastColor: "#d2842f",
-      emptyLabel,
-      unit: "kcal",
-    });
-
-    drawLineChart(elements.sessionChart, {
-      actual: state.unlocked ? analytics.sessionChart.actual : [],
-      forecast: state.unlocked ? analytics.sessionChart.forecast : [],
-      actualColor: "#7c3b22",
-      forecastColor: "#b95d2d",
-      emptyLabel: emptySessionLabel,
-      unit: "sesji",
-    });
-
-    drawLineChart(elements.waistChart, {
-      actual: state.unlocked ? analytics.waistChart.actual : [],
-      forecast: [],
-      actualColor: "#7c3b22",
-      forecastColor: "#7c3b22",
-      emptyLabel: state.unlocked
-        ? "Dodaj co najmniej dwa pomiary pasa, aby zobaczyć trend zmian sylwetki."
-        : "Zaloguj się, aby wyswietlic wykres.",
-      unit: "cm",
-    });
-
-    drawLineChart(elements.exerciseWeightChart, {
-      actual: state.unlocked ? exerciseHistory.weightChart.actual : [],
-      forecast: [],
-      actualColor: "#0c7c59",
-      forecastColor: "#0c7c59",
-      emptyLabel: state.unlocked
-        ? (exerciseHistory.weightChart.emptyLabel || "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć główny parametr.")
-        : "Zaloguj się, aby wyswietlic wykres.",
-      unit: exerciseHistory.weightChart.unit || "kg",
-    });
-
-    drawLineChart(elements.exerciseVolumeChart, {
-      actual: state.unlocked ? exerciseHistory.volumeChart.actual : [],
-      forecast: [],
-      actualColor: "#b95d2d",
-      forecastColor: "#b95d2d",
-      emptyLabel: state.unlocked
-        ? (exerciseHistory.volumeChart.emptyLabel || "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć pracę sesji.")
-        : "Zaloguj się, aby wyswietlic wykres.",
-      unit: exerciseHistory.volumeChart.unit || "kg",
-    });
-
-    drawLineChart(elements.exerciseOneRmChart, {
-      actual: state.unlocked ? exerciseHistory.oneRmChart.actual : [],
-      forecast: [],
-      actualColor: "#7c3b22",
-      forecastColor: "#7c3b22",
-      emptyLabel: state.unlocked
-        ? (exerciseHistory.oneRmChart.emptyLabel || "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć tempo lub sygnał jakości.")
-        : "Zaloguj się, aby wyswietlic wykres.",
-      unit: exerciseHistory.oneRmChart.unit || "kg",
-    });
   }
 
   function getSelectedTrainingProgram() {
@@ -18379,10 +18030,6 @@ function handleExerciseSummaryTableAction(event) {
       exerciseSummaries: [],
       exerciseHistory: buildEmptyExerciseHistory([], null),
       physiqueSummary,
-      weightChart: { actual: [], forecast: [] },
-      energyChart: { actual: [], forecast: [] },
-      sessionChart: { actual: [], forecast: [] },
-      waistChart: { actual: [], forecast: [] },
     };
   }
   function computeAnalytics(data) {
@@ -18417,7 +18064,6 @@ function handleExerciseSummaryTableAction(event) {
       : estimateBodyFatFromBMI(currentWeight, settings);
     const forecastContext = deriveForecastContext(settings, currentWeight);
     const energySeries = buildDailyBurnSeries(entries, workouts, settings);
-    const weeklySessionSeries = buildWeeklySessionSeries(workouts);
     const averageBurn7 = round(average(energySeries.slice(-7).map((item) => item.value)), 0);
     const averageIntake7 = round(average(entrySnapshots.slice(-7).map((entry) => entry.calories)), 0);
     const averageBalance7 = round(average(entrySnapshots.slice(-7).map((entry) => entry.energyBalance)), 0);
@@ -18699,10 +18345,6 @@ function handleExerciseSummaryTableAction(event) {
       exerciseSummaries,
       exerciseHistory,
       physiqueSummary,
-      weightChart: { actual: weightSeries.slice(-18), forecast: weightForecast.forecast },
-      energyChart: { actual: energySeries.slice(-18), forecast: buildEnergyForecastSeries(energySeries) },
-      sessionChart: { actual: weeklySessionSeries.slice(-12), forecast: buildWeeklySessionForecastSeries(weeklySessionSeries) },
-      waistChart: { actual: physiqueSummary.waistSeries.slice(-18), forecast: [] },
     };
   }
   function pickPrimaryForecast(settings, weightForecast, trainingForecast, forecastContext) {
@@ -20299,7 +19941,7 @@ function handleExerciseSummaryTableAction(event) {
     return plan.slice(0, 8);
   }
 
-function deriveForecastContext(settings, currentWeight) {
+  function deriveForecastContext(settings, currentWeight) {
     const fallbackDays = clamp(Math.round(42 - settings.weeklyTarget * 2), 21, 49);
     if (!Number.isFinite(currentWeight) || !Number.isFinite(settings.targetWeightKg)) {
       return {
@@ -21105,7 +20747,7 @@ function deriveForecastContext(settings, currentWeight) {
         return dateCompare !== 0 ? dateCompare : first.exerciseName.localeCompare(second.exerciseName);
       });
   }
-function buildEmptyExerciseHistory(availableExercises, selectedExerciseName) {
+  function buildEmptyExerciseHistory(availableExercises, selectedExerciseName) {
     return {
       availableExercises: Array.isArray(availableExercises) ? availableExercises : [],
       selectedExerciseName: selectedExerciseName || null,
@@ -21114,9 +20756,6 @@ function buildEmptyExerciseHistory(availableExercises, selectedExerciseName) {
       prEvents: [],
       sessions: [],
       activityProfile: "strength",
-      weightChart: { actual: [], forecast: [], unit: "kg", emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć główny parametr." },
-      volumeChart: { actual: [], forecast: [], unit: "kcal", emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć aktywność sesji." },
-      oneRmChart: { actual: [], forecast: [], unit: "kg", emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć tempo lub sygnał jakości." },
     };
   }
 
@@ -21137,197 +20776,7 @@ function buildEmptyExerciseHistory(availableExercises, selectedExerciseName) {
     return availableExercises.find((exerciseName) => exerciseName.toLowerCase() === normalizedPreferred) || availableExercises[0];
   }
 
-    function buildExerciseHistory(workouts, selectedExerciseName, settings, currentWeight, availableExercisesArg) {
-    const availableExercises = Array.isArray(availableExercisesArg)
-      ? availableExercisesArg
-      : summarizeExercises(workouts).map((item) => item.exerciseName);
-    const resolvedExerciseName = resolveSelectedExerciseName(availableExercises, selectedExerciseName);
-
-    if (!resolvedExerciseName) {
-      return buildEmptyExerciseHistory(availableExercises, null);
-    }
-
-    const sessions = summarizeExerciseHistorySessions(workouts, resolvedExerciseName, settings, currentWeight);
-    if (!sessions.length) {
-      return buildEmptyExerciseHistory(availableExercises, resolvedExerciseName);
-    }
-
-    const latestSession = sessions[sessions.length - 1];
-    const cutoff = new Date(parseISODate(latestSession.date).getTime() - (29 * DAY_IN_MS));
-    const sessions30Days = sessions.filter((session) => parseISODate(session.date) >= cutoff).length;
-    const bestWeightSession = getMaxSessionByMetric(sessions, "topWeightKg");
-    const bestVolumeSession = getMaxSessionByMetric(sessions, "totalVolumeKg");
-    const bestOneRmSession = getMaxSessionByMetric(sessions, "bestEstimated1RM");
-
-    return {
-      availableExercises,
-      selectedExerciseName: resolvedExerciseName,
-      summary: `Ćwiczenie "${resolvedExerciseName}" ma ${sessions.length} zapisanych sesji. Ostatnia odbyła się ${formatDisplayDate(latestSession.date)} i wygenerowała około ${formatMetric(latestSession.totalCalories, "kcal")}.`,
-      cards: [
-        {
-          label: "Najlepsza seria",
-          value: bestWeightSession ? (bestWeightSession.topLoadLabel || formatMetric(bestWeightSession.topWeightKg, "kg")) : formatMetric(null, "kg"),
-          support: bestWeightSession
-            ? `Najmocniejsza zapisana seria pochodzi z sesji z ${formatDisplayDate(bestWeightSession.date)}.`
-            : "Brak poprawnej serii do porównania.",
-          tone: "good",
-        },
-        {
-          label: "Najlepszy 1RM",
-          value: formatMetric(bestOneRmSession ? bestOneRmSession.bestEstimated1RM : null, "kg"),
-          support: bestOneRmSession
-            ? `Najmocniejsza estymacja 1RM pochodzi z dnia ${formatDisplayDate(bestOneRmSession.date)}.`
-            : "Brak wystarczających danych do wyliczenia 1RM.",
-          tone: "good",
-        },
-        {
-          label: "Największa sesja",
-          value: bestVolumeSession ? formatSessionActivitySummary(bestVolumeSession, { includeCalories: true }) : "brak",
-          support: bestVolumeSession
-            ? `Najbardziej rozbudowana sesja wypadła ${formatDisplayDate(bestVolumeSession.date)}.`
-            : "Brak sesji do porównania.",
-          tone: "warn",
-        },
-        {
-          label: "Sesje / 30 dni",
-          value: `${sessions30Days}`,
-          support: `Łącznie zapisano ${sessions.length} sesji tego ćwiczenia. Ostatni plan: ${latestSession.planSummary}.`,
-          tone: sessions30Days >= 4 ? "good" : sessions30Days >= 2 ? "warn" : "risk",
-        },
-      ],
-      prEvents: buildExercisePrEvents(sessions),
-      sessions: sessions.slice().reverse(),
-      weightChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(session.topWeightKg))
-          .map((session) => ({ date: session.date, value: round(session.topWeightKg, 1) })),
-        forecast: [],
-      },
-      volumeChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(session.totalCalories))
-          .map((session) => ({ date: session.date, value: round(session.totalCalories, 0) })),
-        forecast: [],
-        unit: "kcal",
-      },
-      oneRmChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(session.bestEstimated1RM))
-          .map((session) => ({ date: session.date, value: round(session.bestEstimated1RM, 1) })),
-        forecast: [],
-      },
-    };
-  }
-  function summarizeExerciseHistorySessions(workouts, selectedExerciseName, settings, currentWeight) {
-    const targetKey = sanitizePlainText(selectedExerciseName, 80).toLowerCase();
-    if (!targetKey) {
-      return [];
-    }
-
-    const grouped = new Map();
-
-    sortWorkouts(workouts).forEach((workout) => {
-      if (sanitizePlainText(workout.exerciseName, 80).toLowerCase() !== targetKey) {
-        return;
-      }
-
-      const bucket = grouped.get(workout.date) || {
-        date: workout.date,
-        exerciseName: workout.exerciseName,
-        entryCount: 0,
-        totalSets: 0,
-        totalVolumeKg: 0,
-        bestEstimated1RM: null,
-        totalCalories: 0,
-        topWeightKg: null,
-        topLoadLabel: "",
-        topWeightReps: null,
-        topWeightSets: null,
-        rpeValues: [],
-        notes: [],
-      };
-
-      const progressLoadKg = getWorkoutProgressLoadKg(workout);
-      bucket.entryCount += 1;
-      bucket.totalSets += Number.isFinite(workout.sets) ? workout.sets : 0;
-      bucket.totalVolumeKg += Number.isFinite(workout.volumeKg) ? workout.volumeKg : 0;
-      bucket.totalCalories += getWorkoutCalories(workout, settings, currentWeight) || 0;
-
-      const estimated1RM = Number.isFinite(workout.estimated1RM)
-        ? workout.estimated1RM
-        : estimateOneRepMax(progressLoadKg, workout.reps);
-      if (Number.isFinite(estimated1RM)) {
-        bucket.bestEstimated1RM = Number.isFinite(bucket.bestEstimated1RM)
-          ? Math.max(bucket.bestEstimated1RM, estimated1RM)
-          : estimated1RM;
-      }
-
-      if (Number.isFinite(progressLoadKg) && progressLoadKg > 0) {
-        const shouldReplaceTopWeight = !Number.isFinite(bucket.topWeightKg) ||
-          progressLoadKg > bucket.topWeightKg ||
-          (progressLoadKg === bucket.topWeightKg && Number(workout.reps) > Number(bucket.topWeightReps || 0));
-        if (shouldReplaceTopWeight) {
-          bucket.topWeightKg = progressLoadKg;
-          bucket.topLoadLabel = formatExerciseLoadLabel(workout) || `${round(progressLoadKg, 1)} kg`;
-          bucket.topWeightReps = Number.isFinite(workout.reps) ? workout.reps : null;
-          bucket.topWeightSets = Number.isFinite(workout.sets) ? workout.sets : null;
-        }
-      }
-
-      if (Number.isFinite(workout.intensityRpe)) {
-        bucket.rpeValues.push(workout.intensityRpe);
-      }
-
-      if (workout.notes) {
-        bucket.notes.push(workout.notes);
-      }
-
-      grouped.set(workout.date, bucket);
-    });
-
-    return Array.from(grouped.values())
-      .sort((first, second) => first.date.localeCompare(second.date))
-      .map((session) => ({
-        date: session.date,
-        exerciseName: session.exerciseName,
-        entryCount: session.entryCount,
-        totalSets: round(session.totalSets, 0),
-        totalVolumeKg: round(session.totalVolumeKg, 0),
-        bestEstimated1RM: Number.isFinite(session.bestEstimated1RM) ? round(session.bestEstimated1RM, 1) : null,
-        totalCalories: round(session.totalCalories, 0),
-        topWeightKg: Number.isFinite(session.topWeightKg) ? round(session.topWeightKg, 1) : null,
-        topLoadLabel: session.topLoadLabel || (Number.isFinite(session.topWeightKg) ? `${round(session.topWeightKg, 1)} kg` : ""),
-        averageRpe: Number.isFinite(average(session.rpeValues)) ? round(average(session.rpeValues), 1) : null,
-        notePreview: session.notes.slice(0, 2).join(" | "),
-        planSummary: buildExerciseSessionPlanSummary(session),
-      }));
-  }
-  function buildExerciseSessionPlanSummary(session) {
-    const parts = [];
-
-    if (Number.isFinite(session.totalSets) && session.totalSets > 0) {
-      parts.push(`${round(session.totalSets, 0)} serii`);
-    }
-
-    const topLoadLabel = session.topLoadLabel || (Number.isFinite(session.topWeightKg) && session.topWeightKg > 0 ? `${round(session.topWeightKg, 1)} kg` : "");
-    if (topLoadLabel && Number.isFinite(session.topWeightSets) && Number.isFinite(session.topWeightReps)) {
-      const joiner = topLoadLabel.startsWith("BW") ? " | " : " @ ";
-      parts.push(`top ${session.topWeightSets}x${session.topWeightReps}${joiner}${topLoadLabel}`);
-    } else if (topLoadLabel) {
-      parts.push(`top ${topLoadLabel}`);
-    }
-
-    if (Number.isFinite(average(session.rpeValues))) {
-      parts.push(`śr. RPE ${round(average(session.rpeValues), 1)}`);
-    }
-
-    if (session.entryCount > 1) {
-      parts.push(`${session.entryCount} wpisy`);
-    }
-
-    return parts.length ? parts.join(" | ") : "Sesja";
-  }
-function getMaxSessionByMetric(sessions, metricKey) {
+  function getMaxSessionByMetric(sessions, metricKey) {
     return sessions.reduce((bestSession, session) => {
       if (!Number.isFinite(session[metricKey])) {
         return bestSession;
@@ -21341,36 +20790,6 @@ function getMaxSessionByMetric(sessions, metricKey) {
     }, null);
   }
 
-    function buildExercisePrEvents(sessions) {
-    if (sessions.length < 2) {
-      return [];
-    }
-
-    let bestWeight = Number.isFinite(sessions[0].topWeightKg) ? sessions[0].topWeightKg : -Infinity;
-    let bestOneRm = Number.isFinite(sessions[0].bestEstimated1RM) ? sessions[0].bestEstimated1RM : -Infinity;
-    const events = [];
-
-    for (let index = 1; index < sessions.length; index += 1) {
-      const session = sessions[index];
-      const labels = [];
-
-      if (Number.isFinite(session.topWeightKg) && session.topWeightKg > bestWeight) {
-        bestWeight = session.topWeightKg;
-        labels.push(`PR serii: ${session.topLoadLabel || `${round(session.topWeightKg, 1)} kg`}`);
-      }
-
-      if (Number.isFinite(session.bestEstimated1RM) && session.bestEstimated1RM > bestOneRm) {
-        bestOneRm = session.bestEstimated1RM;
-        labels.push(`PR 1RM: ${round(session.bestEstimated1RM, 1)} kg`);
-      }
-
-      if (labels.length) {
-        events.push(`${formatDisplayDate(session.date)}: ${labels.join(" | ")}.`);
-      }
-    }
-
-    return events.slice(-6).reverse();
-  }
   function getMinSessionByMetric(sessions, metricKey) {
     return sessions.reduce((bestSession, session) => {
       if (!Number.isFinite(session[metricKey])) {
@@ -21414,9 +20833,6 @@ function getMaxSessionByMetric(sessions, metricKey) {
     const hasDistanceSeries = sessions.some((session) => Number.isFinite(session.totalDistanceKm) && session.totalDistanceKm > 0);
     const hasDurationSeries = sessions.some((session) => Number.isFinite(session.totalDurationMin) && session.totalDurationMin > 0);
     const hasPaceSeries = sessions.some((session) => Number.isFinite(session.bestPaceMinKm) && session.bestPaceMinKm > 0);
-    const primaryUnit = isCardio ? (sessions.find((session) => session.primaryMetricUnit)?.primaryMetricUnit || "km") : "kg";
-    const workloadUnit = isCardio ? (sessions.find((session) => session.workloadMetricUnit)?.workloadMetricUnit || "kcal") : "kcal";
-    const qualityUnit = isCardio ? (sessions.find((session) => session.qualityMetricUnit)?.qualityMetricUnit || "min/km") : "kg";
     const cards = isCardio
       ? [
           {
@@ -21505,30 +20921,6 @@ function getMaxSessionByMetric(sessions, metricKey) {
       prEvents: buildExercisePrEvents(sessions),
       sessions: sessions.slice().reverse(),
       activityProfile: latestSession.activityProfile || "strength",
-      weightChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(isCardio ? session.primaryMetricValue : session.topWeightKg))
-          .map((session) => ({ date: session.date, value: round(isCardio ? session.primaryMetricValue : session.topWeightKg, primaryUnit === "km" ? 1 : 0) })),
-        forecast: [],
-        unit: primaryUnit,
-        emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć główny parametr.",
-      },
-      volumeChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(session.workloadMetricValue))
-          .map((session) => ({ date: session.date, value: round(session.workloadMetricValue, workloadUnit === "km" ? 1 : 0) })),
-        forecast: [],
-        unit: workloadUnit,
-        emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć aktywność sesji.",
-      },
-      oneRmChart: {
-        actual: sessions
-          .filter((session) => Number.isFinite(isCardio ? session.qualityMetricValue : session.bestEstimated1RM))
-          .map((session) => ({ date: session.date, value: round(isCardio ? session.qualityMetricValue : session.bestEstimated1RM, qualityUnit === "min/km" ? 2 : 1) })),
-        forecast: [],
-        unit: qualityUnit,
-        emptyLabel: "Wybierz aktywność z co najmniej jedną sesją, aby zobaczyć tempo lub sygnał jakości.",
-      },
     };
   }
 
@@ -21866,75 +21258,6 @@ function getMaxSessionByMetric(sessions, metricKey) {
 
     return events.slice(-6).reverse();
   }
-function summarizeWorkoutSessions(workouts) {
-    if (!workouts.length) {
-      return [];
-    }
-
-    const grouped = new Map();
-
-    sortWorkouts(workouts).forEach((workout) => {
-      const bucket = grouped.get(workout.date) || [];
-      bucket.push(workout);
-      grouped.set(workout.date, bucket);
-    });
-
-    return Array.from(grouped.entries())
-      .map((item) => {
-        const dayWorkouts = item[1];
-        const totalVolumeKg = round(dayWorkouts.reduce((sum, workout) => sum + (Number.isFinite(workout.volumeKg) ? workout.volumeKg : 0), 0), 0);
-        const totalDistanceKm = round(dayWorkouts.reduce((sum, workout) => sum + (Number.isFinite(workout.distanceKm) ? workout.distanceKm : 0), 0), 1);
-        const totalDurationMin = round(dayWorkouts.reduce((sum, workout) => sum + (Number.isFinite(workout.durationMin) ? workout.durationMin : 0), 0), 0);
-        const estimatedCalories = round(dayWorkouts.reduce((sum, workout) => sum + (getWorkoutCalories(workout, buildEmptyData().settings, 80) || 0), 0), 0);
-        return {
-          date: item[0],
-          exerciseCount: dayWorkouts.length,
-          volumeKg: totalVolumeKg,
-          workloadLabel: totalDistanceKm > 0
-            ? `${totalDistanceKm} km`
-            : totalDurationMin > 0
-              ? `${totalDurationMin} min`
-              : estimatedCalories > 0
-                ? `${estimatedCalories} kcal`
-                : `${dayWorkouts.length} cw.`,
-          estimatedCalories,
-          exercisePreview: buildExercisePreview(dayWorkouts, 3),
-        };
-      })
-      .sort((first, second) => second.date.localeCompare(first.date));
-  }
-
-  function buildWeeklySessionSeries(workouts) {
-    if (!workouts.length) {
-      return [];
-    }
-
-    const grouped = new Map();
-
-    sortWorkouts(workouts).forEach((workout) => {
-      const weekStart = getWeekStartISO(workout.date);
-      const bucket = grouped.get(weekStart) || {
-        workoutDates: new Set(),
-        volumeKg: 0,
-        estimatedCalories: 0,
-      };
-
-      bucket.workoutDates.add(workout.date);
-      bucket.volumeKg += Number.isFinite(workout.volumeKg) ? workout.volumeKg : 0;
-      bucket.estimatedCalories += getWorkoutCalories(workout, buildEmptyData().settings, 80) || 0;
-      grouped.set(weekStart, bucket);
-    });
-
-    return Array.from(grouped.entries())
-      .sort((first, second) => first[0].localeCompare(second[0]))
-      .map((item) => ({
-        date: item[0],
-        value: item[1].workoutDates.size,
-        volumeKg: round(item[1].volumeKg, 0),
-        estimatedCalories: round(item[1].estimatedCalories, 0),
-      }));
-  }
-
   function buildExercisePreview(items, limit) {
     const names = items
       .map((item) => item.exerciseName)
@@ -21948,63 +21271,6 @@ function summarizeWorkoutSessions(workouts) {
     const preview = names.slice(0, maxItems).join(", ");
     const hiddenCount = Math.max(names.length - maxItems, 0);
     return hiddenCount > 0 ? `${preview} +${hiddenCount}` : preview;
-  }
-
-  function buildEnergyForecastSeries(energySeries) {
-    if (energySeries.length < 2) {
-      return [];
-    }
-
-    const recent = energySeries.slice(-10);
-    const latest = recent[recent.length - 1];
-    const regression = weightedLinearRegression(recent);
-    const baseline = average(recent.map((item) => item.value));
-    const projected = clamp(
-      round((Number.isFinite(baseline) ? baseline : latest.value) + (regression.slope * 14 * 0.5), 0),
-      1200,
-      7000
-    );
-
-    return buildForecastSeries(latest.date, latest.value, projected, 14);
-  }
-
-  function buildWeeklySessionForecastSeries(weeklySeries) {
-    if (weeklySeries.length < 2) {
-      return [];
-    }
-
-    const recent = weeklySeries.slice(-6);
-    const latest = recent[recent.length - 1];
-    const regression = weightedLinearRegression(recent);
-    const baseline = average(recent.map((item) => item.value));
-    const projected = clamp(
-      round((Number.isFinite(baseline) ? baseline : latest.value) + (regression.slope * 21), 1),
-      0,
-      7
-    );
-
-    return buildWeeklyForecastSeries(latest.date, latest.value, projected, 3);
-  }
-
-  function buildWeeklyForecastSeries(lastWeekDate, startValue, endValue, weeks) {
-    if (!Number.isFinite(startValue) || !Number.isFinite(endValue)) {
-      return [];
-    }
-
-    const startDate = parseISODate(lastWeekDate);
-    const totalWeeks = Math.max(1, Math.round(weeks || 0));
-    const points = [];
-
-    for (let index = 1; index <= totalWeeks; index += 1) {
-      const ratio = index / totalWeeks;
-      const currentDate = new Date(startDate.getTime() + (index * 7 * DAY_IN_MS));
-      points.push({
-        date: toISODate(currentDate),
-        value: round(startValue + (endValue - startValue) * ratio, 1),
-      });
-    }
-
-    return points;
   }
 
   function countRecentWorkoutDays(workouts, days, latestDateValue) {
@@ -22382,7 +21648,7 @@ function summarizeWorkoutSessions(workouts) {
       : "";
     return `${pattern}${load}${rpe}`;
   }
-function calculateConsistency(entries, weeklyTarget, workouts) {
+  function calculateConsistency(entries, weeklyTarget, workouts) {
     const latestTrackedDate = getLatestTrackedDate(entries, workouts);
     if (!latestTrackedDate) {
       return 0;
@@ -23661,7 +22927,7 @@ function calculateConsistency(entries, weeklyTarget, workouts) {
       estimatedCalories: sanitizeFiniteNumber(workout.estimatedCalories, 0, 3000),
     };
   }
-function sortWorkouts(workouts) {
+  function sortWorkouts(workouts) {
     return workouts.slice().sort((first, second) => {
       const dateCompare = first.date.localeCompare(second.date);
       return dateCompare !== 0 ? dateCompare : first.exerciseName.localeCompare(second.exerciseName);
@@ -23724,7 +22990,7 @@ function sortWorkouts(workouts) {
       exercises: normalizedExercises,
     };
   }
-function sortTemplates(templates) {
+  function sortTemplates(templates) {
     return templates.slice().sort((first, second) => {
       const updatedCompare = (second.updatedAt || "").localeCompare(first.updatedAt || "");
       return updatedCompare !== 0 ? updatedCompare : first.name.localeCompare(second.name);
@@ -24240,153 +23506,6 @@ function sortTemplates(templates) {
     }
   }
 
-  function drawLineChart(canvas, config) {
-    if (!shouldDrawChartCanvas(canvas)) {
-      return;
-    }
-
-    const prepared = prepareCanvas(canvas);
-    const ctx = prepared.ctx;
-    const width = prepared.width;
-    const height = prepared.height;
-    const actual = config.actual || [];
-    const forecast = config.forecast || [];
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#fff9f1";
-    ctx.fillRect(0, 0, width, height);
-
-    if (!actual.length) {
-      drawChartEmptyState(ctx, width, height, config.emptyLabel);
-      return;
-    }
-
-    const all = actual.concat(forecast);
-    const dates = all.map((point) => parseISODate(point.date).getTime());
-    const values = all.map((point) => point.value);
-    const minDate = Math.min.apply(null, dates);
-    const maxDate = Math.max.apply(null, dates);
-    const minValueRaw = Math.min.apply(null, values);
-    const maxValueRaw = Math.max.apply(null, values);
-    const paddingValue = Math.max((maxValueRaw - minValueRaw) * 0.18, 1);
-    const minValue = minValueRaw - paddingValue;
-    const maxValue = maxValueRaw + paddingValue;
-    const padding = { top: 18, right: 18, bottom: 38, left: 54 };
-
-    drawChartGrid(ctx, width, height, padding, minValue, maxValue, config.unit);
-    drawSeries(ctx, actual, { minDate, maxDate, minValue, maxValue, width, height, padding, color: config.actualColor, dashed: false });
-    if (forecast.length) {
-      drawSeries(ctx, [{ date: actual[actual.length - 1].date, value: actual[actual.length - 1].value }].concat(forecast), {
-        minDate,
-        maxDate,
-        minValue,
-        maxValue,
-        width,
-        height,
-        padding,
-        color: config.forecastColor,
-        dashed: true,
-      });
-    }
-    drawAxisLabels(ctx, width, height, padding, actual, forecast);
-  }
-
-  function shouldDrawChartCanvas(canvas) {
-    if (!canvas || !canvas.isConnected || canvas.closest(".is-hidden, [hidden]")) {
-      return false;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  }
-
-  function drawChartGrid(ctx, width, height, padding, minValue, maxValue, unit) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(101, 71, 37, 0.12)";
-    ctx.lineWidth = 1;
-    ctx.fillStyle = "#6f5a44";
-    ctx.font = "12px 'Avenir Next', 'Trebuchet MS', sans-serif";
-
-    for (let index = 0; index <= 4; index += 1) {
-      const y = padding.top + ((height - padding.top - padding.bottom) / 4) * index;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(width - padding.right, y);
-      ctx.stroke();
-      const value = maxValue - ((maxValue - minValue) / 4) * index;
-      ctx.fillText(`${round(value, 1)} ${unit}`.trim(), 10, y + 4);
-    }
-
-    ctx.restore();
-  }
-
-  function drawSeries(ctx, series, chart) {
-    ctx.save();
-    ctx.strokeStyle = chart.color;
-    ctx.lineWidth = 3;
-    if (chart.dashed) {
-      ctx.setLineDash([8, 8]);
-    }
-
-    ctx.beginPath();
-    series.forEach((point, index) => {
-      const position = projectPoint(point, chart);
-      if (index === 0) {
-        ctx.moveTo(position.x, position.y);
-      } else {
-        ctx.lineTo(position.x, position.y);
-      }
-    });
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    const last = projectPoint(series[series.length - 1], chart);
-    ctx.fillStyle = chart.color;
-    ctx.beginPath();
-    ctx.arc(last.x, last.y, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawAxisLabels(ctx, width, height, padding, actual, forecast) {
-    ctx.save();
-    ctx.fillStyle = "#6f5a44";
-    ctx.font = "12px 'Avenir Next', 'Trebuchet MS', sans-serif";
-    ctx.fillText(formatDisplayDate(actual[0].date), padding.left, height - 14);
-    ctx.fillText(formatDisplayDate(actual[actual.length - 1].date), width / 2 - 30, height - 14);
-    ctx.fillText(formatDisplayDate((forecast[forecast.length - 1] || actual[actual.length - 1]).date), width - padding.right - 70, height - 14);
-    ctx.restore();
-  }
-
-  function drawChartEmptyState(ctx, width, height, label) {
-    ctx.save();
-    ctx.fillStyle = "#6f5a44";
-    ctx.font = "15px 'Avenir Next', 'Trebuchet MS', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(label, width / 2, height / 2);
-    ctx.restore();
-  }
-
-  function projectPoint(point, chart) {
-    const drawableWidth = chart.width - chart.padding.left - chart.padding.right;
-    const drawableHeight = chart.height - chart.padding.top - chart.padding.bottom;
-    const time = parseISODate(point.date).getTime();
-    const x = chart.padding.left + ((time - chart.minDate) / Math.max(chart.maxDate - chart.minDate, DAY_IN_MS)) * drawableWidth;
-    const y = chart.padding.top + (1 - ((point.value - chart.minValue) / Math.max(chart.maxValue - chart.minValue, 1))) * drawableHeight;
-    return { x, y };
-  }
-
-  function prepareCanvas(canvas) {
-    const ratio = window.devicePixelRatio || 1;
-    const width = Math.max(320, Math.floor(canvas.clientWidth || 900));
-    const height = 320;
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    return { ctx, width, height };
-  }
-
   function createDemoEntries(goal) {
     const entries = [];
     const today = new Date();
@@ -24571,7 +23690,7 @@ function sortTemplates(templates) {
         })),
       }));
   }
-function parseStrictNumber(value, options) {
+  function parseStrictNumber(value, options) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) {
       throw new Error(`${options.label} musi być liczbą.`);
@@ -24934,7 +24053,7 @@ function parseStrictNumber(value, options) {
       estimatedCalories,
     });
   }
-function buildWorkoutIdentityKey(workout) {
+  function buildWorkoutIdentityKey(workout) {
     return [
       workout.date,
       String(workout.exerciseName || "").toLowerCase(),

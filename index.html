@@ -13,11 +13,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icons/app-icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=20260806-tooltip-league-v1">
+  <link rel="stylesheet" href="styles.css?v=20260807-cleanup-perf-v1">
   <script src="vendor/supabase.min.js?v=20260624b" defer></script>
   <script src="league-config.js?v=20260624b" defer></script>
   <script src="vendor/qrcode.js" defer></script>
-  <script src="app.js?v=20260806-tooltip-league-v1" defer></script>
+  <script src="app.js?v=20260807-cleanup-perf-v1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#appMain">Pomiń menu i przejdź do aplikacji</a>
@@ -2267,31 +2267,6 @@
 
       <div id="exerciseHistoryCards" class="metric-grid" aria-live="polite"></div>
 
-      <div class="chart-grid">
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Główny parametr sesji</h3>
-            <p>Dla siły pokazuje najważniejszy parametr serii, a dla cardio zwykle dystans albo najważniejszy parametr wysiłku.</p>
-          </div>
-          <canvas id="exerciseWeightChart" width="900" height="320" aria-label="Wykres głównego parametru ćwiczenia"></canvas>
-        </article>
-
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Aktywność sesji</h3>
-            <p>Dla siły pokazuje wydatek energetyczny, a dla cardio wydatek, czas lub dystans zależnie od danych.</p>
-          </div>
-          <canvas id="exerciseVolumeChart" width="900" height="320" aria-label="Wykres aktywności sesji"></canvas>
-        </article>
-
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Tempo / 1RM</h3>
-            <p>Dla siły pokazuje trend 1RM, a dla cardio tempo lub inny sygnał jakości wysiłku.</p>
-          </div>
-          <canvas id="exerciseOneRmChart" width="900" height="320" aria-label="Wykres szacowanego 1RM ćwiczenia"></canvas>
-        </article>
-      </div>
       <div class="insights-layout">
         <div>
           <h3>Ostatnie PR-y</h3>
@@ -2445,49 +2420,6 @@
       <div class="planner-block">
         <h3>Plan na najbliższe dni</h3>
         <ul id="weeklyPlanList" class="insights-list plan-list"></ul>
-      </div>
-    </section>
-
-    <section id="chartsSection" class="panel charts-panel app-lockable tab-panel" data-tab-panel="charts">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Wizualizacje</p>
-          <h2>Trend i prognoza</h2>
-        </div>
-      </div>
-
-      <div class="chart-grid">
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Masa ciała</h3>
-            <p>Linia ciągła pokazuje historię, przerywana prognozę.</p>
-          </div>
-          <canvas id="weightChart" width="900" height="320" aria-label="Wykres masy ciała"></canvas>
-        </article>
-
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Spalone kalorie</h3>
-            <p>Wykres łączy BMR, kroki i wydatek treningowy dla każdego dnia.</p>
-          </div>
-          <canvas id="energyChart" width="900" height="320" aria-label="Wykres spalonych kalorii"></canvas>
-        </article>
-
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Sesje / tydzień</h3>
-            <p>Pokazuje liczbę aktywnych dni treningowych w tygodniu oraz krótką prognozę regularności.</p>
-          </div>
-          <canvas id="sessionChart" width="900" height="320" aria-label="Wykres tygodniowych sesji treningowych"></canvas>
-        </article>
-
-        <article class="chart-card">
-          <div class="chart-header">
-            <h3>Obwód pasa</h3>
-            <p>To jeden z najbardziej praktycznych wskaźników zmian kompozycji ciała między kolejnymi tygodniami.</p>
-          </div>
-          <canvas id="waistChart" width="900" height="320" aria-label="Wykres obwodu pasa"></canvas>
-        </article>
       </div>
     </section>
 
